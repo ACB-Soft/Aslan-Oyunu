@@ -82,6 +82,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     backgroundElements: [] as BackgroundElement[],
     laneLinesOffset: 0,
     dustParticleTimer: 0,
+    difficultySettings: {
+      initialSpeed: INITIAL_SPEED,
+      maxSpeed: MAX_SPEED,
+      acceleration: ACCELERATION,
+      laserWarningDuration: LASER_WARNING_DURATION,
+      spawnPeriodBase: 95,
+    },
   });
 
   const [dimensions, setDimensions] = useState({ width: 400, height: 700 });
@@ -140,7 +147,46 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const initialLane = 1;
     const targetX = (initialLane * laneWidth) + (laneWidth / 2);
 
-    state.speed = INITIAL_SPEED;
+    const diff = settings.difficulty;
+    let initialSpeed = INITIAL_SPEED;
+    let maxSpeed = MAX_SPEED;
+    let acceleration = ACCELERATION;
+    let laserWarningDuration = LASER_WARNING_DURATION;
+    let spawnPeriodBase = 95;
+    let initialShieldTimer = 180;
+
+    if (diff === 'easy') {
+      initialSpeed = 1.6;
+      maxSpeed = 2.8;
+      acceleration = 0.00007;
+      laserWarningDuration = 95;
+      spawnPeriodBase = 125;
+      initialShieldTimer = 360; // Extra long protective start shield for Easy Mode
+    } else if (diff === 'normal') {
+      initialSpeed = 2.4;
+      maxSpeed = 4.2;
+      acceleration = 0.00015;
+      laserWarningDuration = 75;
+      spawnPeriodBase = 95;
+      initialShieldTimer = 180; // Standard starter shield
+    } else if (diff === 'hard') {
+      initialSpeed = 3.3;
+      maxSpeed = 6.2;
+      acceleration = 0.0003;
+      laserWarningDuration = 45;
+      spawnPeriodBase = 70;
+      initialShieldTimer = 0; // No free starting shield in Hard Mode
+    }
+
+    state.difficultySettings = {
+      initialSpeed,
+      maxSpeed,
+      acceleration,
+      laserWarningDuration,
+      spawnPeriodBase,
+    };
+
+    state.speed = initialSpeed;
     state.frameCount = 0;
     state.itemsCollected = 0;
     state.score = 0;
@@ -155,8 +201,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       width: 55,
       height: 55,
       isJumping: false,
-      shieldActive: true,
-      shieldTimer: 270, // extra long protective start shield for child friendly fun
+      shieldActive: initialShieldTimer > 0,
+      shieldTimer: initialShieldTimer,
       maxShieldTimer: 180,
       targetX: targetX,
       animFrame: 0,
@@ -942,15 +988,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     state.frameCount++;
     
+    const dSettings = state.difficultySettings || {
+      initialSpeed: INITIAL_SPEED,
+      maxSpeed: MAX_SPEED,
+      acceleration: ACCELERATION,
+      laserWarningDuration: LASER_WARNING_DURATION,
+      spawnPeriodBase: 95,
+    };
+
     // Smoothly accelerate over time until reaching the max limit cap
-    if (state.speed < MAX_SPEED) {
-      state.speed += ACCELERATION;
+    if (state.speed < dSettings.maxSpeed) {
+      state.speed += dSettings.acceleration;
     }
 
 
 
     // Gradually increment survival score
-    state.score += 0.08 * (state.speed / INITIAL_SPEED);
+    state.score += 0.08 * (state.speed / dSettings.initialSpeed);
 
     // Animate character frames
     state.player.animFrame++;
@@ -1008,7 +1062,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // 5. SPONTANEOUSLY SPAWNED ENGINES (Cacti & Crystals)
     // Dynamic spawn timers based on speed rate
-    const spawnPeriod = Math.max(50, Math.floor(95 / (state.speed / INITIAL_SPEED)));
+    const spawnPeriod = Math.max(50, Math.floor(dSettings.spawnPeriodBase / (state.speed / dSettings.initialSpeed)));
     if (state.frameCount % spawnPeriod === 0) {
       const targetLane = Math.floor(Math.random() * LANE_COUNT) as Lane;
       const decider = Math.random();
@@ -1031,7 +1085,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           width: 32,
           height: 52,
           laserTriggered: false,
-          laserWarningTimer: LASER_WARNING_DURATION,
+          laserWarningTimer: dSettings.laserWarningDuration,
           laserTimer: LASER_ACTIVE_DURATION,
           isPassed: false,
         });

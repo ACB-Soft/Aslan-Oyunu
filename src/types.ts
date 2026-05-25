@@ -78,5 +78,5 @@ export type PlayState = 'MENU' | 'PLAYING' | 'PAUSED' | 'GAMEOVER';
 export interface GameSettings {
   soundEnabled: boolean;
   vibrationEnabled: boolean;
-  difficulty: 'normal' | 'hard';
+  difficulty: 'easy' | 'normal' | 'hard';
 }

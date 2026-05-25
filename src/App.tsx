@@ -33,7 +33,6 @@ export default function App() {
   const [shieldTimeLeft, setShieldTimeLeft] = useState<number>(0);
   const [restartRequested, setRestartRequested] = useState<boolean>(false);
   const [isNewHighScore, setIsNewHighScore] = useState<boolean>(false);
-  const [isFullScreen, setIsFullScreen] = useState<boolean>(true);
 
   // Settings
   const [settings, setSettings] = useState<GameSettings>({
@@ -88,10 +87,20 @@ export default function App() {
   };
 
   const toggleDifficulty = () => {
-    setSettings((prev) => ({
-      ...prev,
-      difficulty: prev.difficulty === 'normal' ? 'hard' : 'normal',
-    }));
+    setSettings((prev) => {
+      let nextDiff: 'easy' | 'normal' | 'hard' = 'normal';
+      if (prev.difficulty === 'easy') {
+        nextDiff = 'normal';
+      } else if (prev.difficulty === 'normal') {
+        nextDiff = 'hard';
+      } else if (prev.difficulty === 'hard') {
+        nextDiff = 'easy';
+      }
+      return {
+        ...prev,
+        difficulty: nextDiff,
+      };
+    });
   };
 
   return (
@@ -116,14 +125,6 @@ export default function App() {
 
           {/* Quick HUD Score and Audio parameters */}
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => setIsFullScreen(!isFullScreen)}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer border border-amber-500/30 bg-amber-500/10 hover:bg-amber-505/20 active:scale-95 text-amber-400 font-sans"
-              title={isFullScreen ? "Klasik Mod" : "Çocuk / Tam Ekran Modu"}
-            >
-              {isFullScreen ? '📋 Kılavuzu Göster' : '👶 Çocuk Modu (Tam Ekran)'}
-            </button>
-
             <div className="flex items-center gap-2 bg-slate-950/85 py-1.5 px-4 rounded-lg border border-slate-800">
               <Trophy className="w-4 h-4 text-amber-500" />
               <span className="text-xs font-mono font-medium text-slate-400">EN YÜKSEK:</span>
@@ -145,76 +146,10 @@ export default function App() {
       </header>
 
       {/* 2. GAME SECTION CORE */}
-      <main id="mainGameContent" className={isFullScreen ? "flex-1 min-h-0 w-full max-w-none px-2 py-3 flex flex-col justify-center items-center overflow-hidden" : "flex-1 min-h-0 max-w-7xl w-full mx-auto px-4 py-4 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch overflow-hidden"}>
+      <main id="mainGameContent" className="flex-1 min-h-0 w-full max-w-none px-2 py-3 flex flex-col justify-center items-center overflow-hidden">
         
-        {/* LEFT SIDEBAR: GUIDE & CONTROLS TUTORIAL */}
-        {!isFullScreen && (
-          <section id="guidesCard" className="lg:col-span-3.5 flex flex-col justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg h-full max-h-full overflow-y-auto">
-            <div>
-              <div className="flex items-center gap-2 mb-4 border-b border-slate-800 pb-2.5">
-                <HelpCircle className="w-5 h-5 text-cyan-400" />
-                <h2 className="text-md font-bold text-slate-200">Nasıl Oynanır?</h2>
-              </div>
-
-              <div className="space-y-4 text-xs select-text">
-                <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="inline-block bg-cyan-600/30 text-cyan-400 px-1.5 py-0.5 rounded text-[10px] font-bold font-mono">YATAY LAZER</span>
-                  </div>
-                  <p className="text-slate-400 leading-relaxed font-sans">
-                    <strong>Kaktüsün gözlerinden çıkan yatay lazerler tüm şeritleri kaplar!</strong> Sağa sola kaçamazsın. Doğru zamanda <span className="text-cyan-300 font-semibold">Yukarı Kaydırarak</span> veya <span className="text-cyan-300 font-semibold">Space tuşuna basarak</span> üstünden <strong>Zıpla!</strong>
-                  </p>
-                </div>
-
-                <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="inline-block bg-rose-600/30 text-rose-500 px-1.5 py-0.5 rounded text-[10px] font-bold font-mono">DİKEY LAZER</span>
-                  </div>
-                  <p className="text-slate-400 leading-relaxed">
-                    Belirli şeritlerde dikey kırmızı ışınlar belirir. Flashing (!) işareti başladığında o şeritten hemen kaç, ya da üzerinden atla!
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex flex-col gap-1 items-center text-center">
-                    <Sparkles className="w-5 h-5 text-cyan-400" />
-                    <span className="font-bold text-slate-300 text-[11px]">Kum Kristali</span>
-                    <span className="text-[10px] text-slate-400">+50 Ekstra Puan</span>
-                  </div>
-                  <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex flex-col gap-1 items-center text-center">
-                    <Flame className="w-5 h-5 text-blue-400 animate-pulse" />
-                    <span className="font-bold text-slate-300 text-[11px]">Vaha Suyu</span>
-                    <span className="text-[10px] text-slate-400">3sn Dayanıklılık</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-slate-800">
-              <h3 className="text-xs font-bold text-slate-300 mb-2 flex items-center gap-2">
-                <Smartphone className="w-3.5 h-3.5 text-amber-500" />
-                Kontroller
-              </h3>
-              <div className="space-y-2 text-[11px] font-mono text-slate-400">
-                <div className="flex justify-between py-1 border-b border-slate-800/50">
-                  <span>Sol / Sağ Şerit:</span>
-                  <span className="text-slate-200">A / D veya ◀ / ▶</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-800/50">
-                  <span>Zıplama:</span>
-                  <span className="text-slate-200">Space veya ▲ / W</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span>Mobil Swipe:</span>
-                  <span className="text-slate-200">Yukarı / Sağa / Sola</span>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
         {/* CENTER COLUMN: ACTIVE ARCADE PLAYABLE CANVAS */}
-        <section id="arcadeCabinet" className={isFullScreen ? "w-full max-w-[500px] flex flex-col gap-2 items-center justify-center flex-1 min-h-0 py-1" : "lg:col-span-5 flex flex-col gap-3 items-center justify-center flex-1 min-h-0 py-1"}>
+        <section id="arcadeCabinet" className="w-full max-w-[500px] flex flex-col gap-2 items-center justify-center flex-1 min-h-0 py-1">
           
           {/* Active Shield Progress Indicators */}
           <div className="w-full max-w-[500px] h-8 flex items-center justify-between px-3 bg-slate-900 rounded-lg border border-slate-800 select-none shrink-0">
@@ -285,20 +220,35 @@ export default function App() {
                       onClick={toggleDifficulty}
                       className="text-xs font-bold px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-700 capitalize text-amber-500 cursor-pointer"
                     >
-                      {settings.difficulty === 'normal' ? 'Normal' : 'Zor'}
+                      {settings.difficulty === 'easy' ? 'Kolay' : settings.difficulty === 'normal' ? 'Normal' : 'Zor'}
                     </button>
                   </div>
 
-                  <div className="text-[11px] text-slate-400 leading-relaxed font-sans text-left space-y-2">
-                    <p className="flex items-start gap-1.5 font-bold text-amber-300">
-                      👶 4-5 Yaş Çocuk Moduna Özel:
+                  <div className="text-[11px] text-slate-400 leading-relaxed font-sans text-left space-y-1 bg-slate-950 p-2.5 rounded-lg border border-slate-800">
+                    <p className="font-bold text-amber-300">
+                      {settings.difficulty === 'easy' ? '👶 Kolay Mod Özellikleri:' : settings.difficulty === 'normal' ? '🦁 Normal Mod Özellikleri:' : '🔥 Zor Mod Özellikleri:'}
                     </p>
-                    <p className="flex items-start gap-1.5 pl-2">
-                      🚶 Yavaş akış ve yumuşak zıplama kontrolleri.
-                    </p>
-                    <p className="flex items-start gap-1.5 pl-2">
-                      🛡️ Oyuna başlarken ekstra koruyucu kalkan desteği!
-                    </p>
+                    {settings.difficulty === 'easy' && (
+                      <>
+                        <p className="flex items-start gap-1">🚶 Ekstra yavaş akış ve yumuşak zıplama.</p>
+                        <p className="flex items-start gap-1">🛡️ Ekstra uzun koruyucu kalkan desteği.</p>
+                        <p className="flex items-start gap-1">🌵 Daha uzun lazer uyarı süresi ve seyrek engeller.</p>
+                      </>
+                    )}
+                    {settings.difficulty === 'normal' && (
+                      <>
+                        <p className="flex items-start gap-1">🚶 Dengeli akış ve tatlı zıplama hissiyatı.</p>
+                        <p className="flex items-start gap-1">🛡️ Bölüm başında standart kalkan koruması.</p>
+                        <p className="flex items-start gap-1">⚡ Orta dereceli refleks gereksinimi.</p>
+                      </>
+                    )}
+                    {settings.difficulty === 'hard' && (
+                      <>
+                        <p className="flex items-start gap-1">🏃 Çok hızlı akış ve seri refleks sınavı.</p>
+                        <p className="flex items-start gap-1">⚡ Kısa sürede ateşlenen tehlikeli lazerler.</p>
+                        <p className="flex items-start gap-1">🏆 Rekor kırabilecek aslanlar için gerçek çöl mücadelesi!</p>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -372,61 +322,6 @@ export default function App() {
             )}
           </div>
         </section>
-
-        {/* RIGHT SIDEBAR: HIGH SCORE TABLES AND DESERT WISDOM */}
-        {!isFullScreen && (
-          <section id="leaderboardCard" className="lg:col-span-3.5 flex flex-col justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg h-full max-h-full overflow-y-auto">
-            <div>
-              <div className="flex items-center gap-2 mb-4 border-b border-slate-800 pb-2.5">
-                <Trophy className="w-5 h-5 text-amber-500 animate-bounce" />
-                <h2 className="text-md font-bold text-slate-200">En Yüksek Skorlar</h2>
-              </div>
-
-              <div className="space-y-2.5 font-mono">
-                <div className="flex items-center justify-between p-2.5 bg-amber-500/10 rounded-xl border border-amber-400/30 text-xs">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-amber-400 font-bold">1.</span>
-                    <span className="font-sans font-bold text-slate-200">Aslan Kral (Sen)</span>
-                  </div>
-                  <span className="font-bold text-amber-400">{Math.max(highScore, score)}</span>
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-slate-950/70 rounded-xl border border-slate-800/80 text-xs opacity-80">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-slate-400 font-semibold">2.</span>
-                    <span className="font-sans text-slate-300">Kum Kaplanı</span>
-                  </div>
-                  <span className="font-semibold text-slate-400">1250</span>
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-slate-950/70 rounded-xl border border-slate-800/80 text-xs opacity-70">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-slate-400 font-semibold">3.</span>
-                    <span className="font-sans text-slate-300">Vaha Koşucusu</span>
-                  </div>
-                  <span className="font-semibold text-slate-400">800</span>
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 bg-slate-950/70 rounded-xl border border-slate-800/80 text-xs opacity-50">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-slate-400 font-semibold">4.</span>
-                    <span className="font-sans text-slate-300">Çöl Tilkisi</span>
-                  </div>
-                  <span className="font-semibold text-slate-400">350</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3 bg-amber-500/5 rounded-xl border border-amber-505/10 text-center">
-              <span className="text-[10px] font-mono text-amber-500 font-bold tracking-widest uppercase block mb-1">
-                🏜️ Çöl Atasözü
-              </span>
-              <p className="text-[11px] text-slate-400 italic leading-relaxed">
-                "Lazer kumsalları eritebilir ama aslanın cesaretine ve zıplama yeteneğine asla dokunamaz!"
-              </p>
-            </div>
-          </section>
-        )}
 
       </main>
 
