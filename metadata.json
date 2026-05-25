@@ -1,0 +1,6 @@
+{
+  "name": "Aslan Kaçış",
+  "description": "Şerit değiştirip zıplayarak kaktüs ve lazerlerden kaçtığınız, kum kristalleri ve vaha kalkanı topladığınız eğlenceli ve heyecanlı bir sonsuz koşu oyunu.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
