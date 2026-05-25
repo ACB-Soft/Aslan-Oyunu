@@ -4,7 +4,7 @@
  */
 
 import React, { useRef, useEffect, useState } from 'react';
-import { Lane, Player, Obstacle, Collectible, Particle, BackgroundElement, PlayState, GameSettings } from '../types';
+import { Lane, Player, Obstacle, ObstacleType, Collectible, Particle, BackgroundElement, PlayState, GameSettings } from '../types';
 import { audioSynth } from '../utils/audio';
 
 // Constants for game configurations
@@ -82,6 +82,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     backgroundElements: [] as BackgroundElement[],
     laneLinesOffset: 0,
     dustParticleTimer: 0,
+    lastLaserFrame: 0,
     difficultySettings: {
       initialSpeed: INITIAL_SPEED,
       maxSpeed: MAX_SPEED,
@@ -211,6 +212,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     state.collectibles = [];
     state.particles = [];
     state.laneLinesOffset = 0;
+    state.lastLaserFrame = 0;
     
     // Seed scenic background elements (rolling dunes and static cacti silhouettes)
     state.backgroundElements = [
@@ -271,18 +273,30 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, width, height);
 
-    // Render a large glowing sunset sun
+    // Render a large glowing sunset sun with fast vector concentric glow rings
     ctx.save();
+    
+    // Ambient Outer Corona 2
+    ctx.beginPath();
+    ctx.arc(width * 0.5, height * 0.38, 110, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(249, 115, 22, 0.07)';
+    ctx.fill();
+
+    // Ambient Outer Corona 1
+    ctx.beginPath();
+    ctx.arc(width * 0.5, height * 0.38, 88, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(249, 115, 22, 0.16)';
+    ctx.fill();
+
+    // Central Radiant Sun body
     ctx.beginPath();
     ctx.arc(width * 0.5, height * 0.38, 68, 0, Math.PI * 2);
     const sunGrad = ctx.createRadialGradient(width * 0.5, height * 0.38, 2, width * 0.5, height * 0.38, 68);
     sunGrad.addColorStop(0, '#fffbeb');   // bright warm core
     sunGrad.addColorStop(0.3, '#fef08a');  // glowing warm yellow
     sunGrad.addColorStop(0.7, '#f97316');  // sunset orange edge
-    sunGrad.addColorStop(1, 'rgba(249, 115, 22, 0)'); // ambient glow dissipation
+    sunGrad.addColorStop(1, 'rgba(249, 115, 22, 0.1)'); // ambient glow dissipation
     ctx.fillStyle = sunGrad;
-    ctx.shadowBlur = 35;
-    ctx.shadowColor = '#f97316';
     ctx.fill();
     ctx.restore();
 
@@ -370,16 +384,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const { width, height } = dimensions;
     const state = stateRef.current;
 
-    // Draw 3 lanes with perspective vanishing points
+    // Draw 3 lanes with perspective vanishing points (highly optimized, bright sharp colors)
     ctx.strokeStyle = '#f59e0b'; // glowing amber-500 lane marks
-    ctx.shadowBlur = 6;
-    ctx.shadowColor = '#d97706';
 
     // Scroll lines
     state.laneLinesOffset = (state.laneLinesOffset + state.speed) % 80;
 
     for (let i = 1; i < LANE_COUNT; i++) {
-      const xStart = i * (width / LANE_COUNT);
+       const xStart = i * (width / LANE_COUNT);
       
       ctx.save();
       ctx.setLineDash([20, 25]);
@@ -392,8 +404,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.stroke();
       ctx.restore();
     }
-    
-    ctx.shadowBlur = 0; // Reset shadows
   };
 
   const drawLionCharacter = (ctx: CanvasRenderingContext2D, playerObj: Player) => {
@@ -423,11 +433,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.fillStyle = shieldGrad;
       ctx.fill();
 
-      // Shield ring rotation
+      // Shield outer glowing ring (highly optimized, draw a double circle instead of shadowBlur)
+      ctx.beginPath();
+      ctx.arc(0, -22, playerObj.width * 0.9, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.45)';
+      ctx.lineWidth = 2.0;
+      ctx.stroke();
+
       ctx.strokeStyle = '#06b6d4';
       ctx.lineWidth = 3.5;
-      ctx.shadowBlur = 12;
-      ctx.shadowColor = '#06b6d4';
       ctx.setLineDash([15, 30]);
       ctx.lineDashOffset = (Date.now() / 8) % 45;
       ctx.stroke();
@@ -612,8 +626,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         ctx.beginPath();
         ctx.arc(0, 0, 16, 0, Math.PI * 2);
         ctx.fillStyle = '#ef4444';
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = '#ef4444';
         ctx.fill();
         ctx.lineWidth = 2.5;
         ctx.strokeStyle = '#ffffff';
@@ -641,8 +653,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         ctx.arc(-enemy.x + 35, 0, 15, 0, Math.PI * 2);
         ctx.arc(-enemy.x + dimensions.width - 35, 0, 15, 0, Math.PI * 2);
         ctx.fillStyle = '#ef4444';
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = '#ef4444';
         ctx.fill();
 
         ctx.strokeStyle = '#ffffff';
@@ -696,8 +706,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     // 3. SCI-FI LASER RADAR EYE (Red visors indicating laser capabilities)
     if (enemy.type === 'vLaser' || enemy.type === 'hLaser') {
       ctx.fillStyle = '#ef4444';
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = '#ef4444';
       
       // Cyber tactical visor
       ctx.beginPath();
@@ -710,8 +718,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.beginPath();
       ctx.arc(eyeOsc, -bodyHeight * 0.88 + 3, 2, 0, Math.PI * 2);
       ctx.fill();
-      
-      ctx.shadowBlur = 0; // Reset
     }
 
     // 4. DIKENLER (Prickly spikes along outlines)
@@ -736,50 +742,83 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.restore();
   };
 
-  const drawSandCrystal = (ctx: CanvasRenderingContext2D, c: Collectible) => {
+  const drawHamburger = (ctx: CanvasRenderingContext2D, c: Collectible) => {
     ctx.save();
     ctx.translate(c.x, c.y);
-    // Dynamic spin and float displacement
-    ctx.rotate(c.angle);
     
+    // Slight rocking animation instead of full wild spin for realistic food
+    const rockAngle = Math.sin(Date.now() / 200) * 0.15;
+    ctx.rotate(rockAngle);
+    
+    // Scale slightly based on hover/pulse
+    const pulseScale = 1 + Math.sin(Date.now() / 150) * 0.05;
+    ctx.scale(pulseScale, pulseScale);
+
     // Draw shadow on ground
     ctx.save();
     ctx.beginPath();
-    ctx.ellipse(0, 30, 10, 3, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    ctx.ellipse(0, 15, 12, 3, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
     ctx.fill();
     ctx.restore();
 
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = '#06b6d4';
-
-    // Octahedron/Gem vector polygon
+    // 1. Bottom Bun (Golden Brown)
+    ctx.fillStyle = '#b45309'; // amber-700 / brown
     ctx.beginPath();
-    ctx.moveTo(0, -18); // top
-    ctx.lineTo(13, 0); // right
-    ctx.lineTo(0, 18); // bottom
-    ctx.lineTo(-13, 0); // left
-    ctx.closePath();
-
-    const crystGrad = ctx.createLinearGradient(-13, -18, 13, 18);
-    crystGrad.addColorStop(0, '#22d3ee'); // bright cyan
-    crystGrad.addColorStop(0.5, '#06b6d4'); // dark cyan
-    crystGrad.addColorStop(1, '#0891b2');
-    ctx.fillStyle = crystGrad;
+    ctx.ellipse(0, 7, 13, 3, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Inside crystal light facets
+    // 2. Burger Patty (Deep Brown)
+    ctx.fillStyle = '#451a03'; // brown-950 extremely dark brown
     ctx.beginPath();
-    ctx.moveTo(0, -18);
-    ctx.lineTo(0, 18);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    ctx.ellipse(0, 3, 14, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
 
+    // 3. Melted Cheese Slice (Bright Yellow)
+    ctx.fillStyle = '#fbbf24'; // amber-400
     ctx.beginPath();
-    ctx.moveTo(-13, 0);
-    ctx.lineTo(13, 0);
-    ctx.stroke();
+    ctx.moveTo(-13, 2);
+    ctx.lineTo(13, 2);
+    ctx.lineTo(9, 5); // dripping corner
+    ctx.lineTo(3, 2);
+    ctx.lineTo(-4, 5); // dripping corner
+    ctx.lineTo(-9, 2);
+    ctx.closePath();
+    ctx.fill();
+
+    // 4. Fresh Lettuce (Green, wavy)
+    ctx.fillStyle = '#22c55e'; // green-500
+    ctx.beginPath();
+    ctx.ellipse(0, -1, 14, 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Wave details on lettuce
+    ctx.fillStyle = '#15803d'; // green-700
+    ctx.beginPath();
+    ctx.arc(-8, -1, 2.5, 0, Math.PI * 2);
+    ctx.arc(0, -1, 2.5, 0, Math.PI * 2);
+    ctx.arc(8, -1, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 5. Top Bun (Golden brown dome)
+    ctx.fillStyle = '#f59e0b'; // amber-500
+    ctx.beginPath();
+    ctx.arc(0, -2, 13, Math.PI, 0); // half circle dome
+    ctx.closePath();
+    ctx.fill();
+    
+    // Highlight on top bun
+    ctx.fillStyle = '#fbbf24'; // bright highlights
+    ctx.beginPath();
+    ctx.ellipse(-4, -7, 3, 1.5, -Math.PI/6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 6. Sesame Seeds (Tiny white specks on Top Bun)
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '6px sans-serif';
+    ctx.fillText('•', -5, -5);
+    ctx.fillText('•', 0, -8);
+    ctx.fillText('•', 5, -6);
 
     ctx.restore();
   };
@@ -792,10 +831,15 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const bounceOffset = Math.sin(Date.now() / 150) * 4.5;
     ctx.translate(0, bounceOffset);
 
+    // Outer concentric magic ring (extremely fast vector alternative to shadowBlur)
+    ctx.beginPath();
+    ctx.arc(0, 0, 21, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(59, 130, 246, 0.35)';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
     // Rotating glowing magical orb
     ctx.save();
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = '#3b82f6';
     ctx.beginPath();
     ctx.arc(0, 0, 17, 0, Math.PI * 2);
     const bubbleGrad = ctx.createRadialGradient(-4, -4, 2, 0, 0, 17);
@@ -854,8 +898,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       beamGrad.addColorStop(1, `rgba(239, 68, 68, ${0.1 * beamAlpha})`);
 
       ctx.save();
-      ctx.shadowBlur = 24;
-      ctx.shadowColor = '#ef4444';
+      // Fluorescent outer envelop glow (super-fast hardware vector layer)
+      ctx.fillStyle = `rgba(239, 68, 68, ${0.18 * beamAlpha})`;
+      ctx.fillRect(enemy.x - (beamWidth + 14) / 2, enemy.y, beamWidth + 14, height - enemy.y);
+      
       ctx.fillStyle = beamGrad;
       // fires stretching down to bottom
       ctx.fillRect(enemy.x - beamWidth / 2, enemy.y, beamWidth, height - enemy.y);
@@ -894,8 +940,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       hGrad.addColorStop(1, `rgba(239, 68, 68, ${0.15 * beamAlpha})`);
 
       ctx.save();
-      ctx.shadowBlur = 25;
-      ctx.shadowColor = '#ef4444';
+      // Fluorescent outer envelope glow (super-fast hardware vector layer)
+      ctx.fillStyle = `rgba(239, 68, 68, ${0.18 * beamAlpha})`;
+      ctx.fillRect(0, enemy.y - (beamHeight + 12) / 2, width, beamHeight + 12);
+
       ctx.fillStyle = hGrad;
       ctx.fillRect(0, enemy.y - beamHeight / 2, width, beamHeight);
       ctx.restore();
@@ -955,23 +1003,28 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       if (playState === 'PLAYING') {
         updateGameMath();
 
-        // Safe score updates
+        // Throttled React state score updates (every 20 frames = ~3 times a second)
+        // This eliminates massive Virtual DOM reconciliation cycles and makes the game incredibly lag-free!
         const nextIntScore = Math.floor(stateRef.current.score);
-        if (nextIntScore !== stateRef.current.renderedScore) {
-          stateRef.current.renderedScore = nextIntScore;
-          setScore(nextIntScore);
-          if (nextIntScore > highScore) {
-            setHighScore(nextIntScore);
+        if (stateRef.current.frameCount % 20 === 0) {
+          if (nextIntScore !== stateRef.current.renderedScore) {
+            stateRef.current.renderedScore = nextIntScore;
+            setScore(nextIntScore);
+            if (nextIntScore > highScore) {
+              setHighScore(nextIntScore);
+            }
           }
         }
 
-        // Safe shield updates
-        if (stateRef.current.player.shieldActive !== activeShield) {
-          setActiveShield(stateRef.current.player.shieldActive);
-        }
-        const expectedShieldTime = stateRef.current.player.shieldActive ? stateRef.current.player.shieldTimer : 0;
-        if (expectedShieldTime !== shieldTimeLeft) {
-          setShieldTimeLeft(expectedShieldTime);
+        // Throttled React state shield updates (every 10 frames = ~6 times a second)
+        if (stateRef.current.frameCount % 10 === 0) {
+          if (stateRef.current.player.shieldActive !== activeShield) {
+            setActiveShield(stateRef.current.player.shieldActive);
+          }
+          const expectedShieldTime = stateRef.current.player.shieldActive ? stateRef.current.player.shieldTimer : 0;
+          if (expectedShieldTime !== shieldTimeLeft) {
+            setShieldTimeLeft(expectedShieldTime);
+          }
         }
       }
       renderGameFrame();
@@ -1069,11 +1122,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       if (decider < 0.62) {
         // Build cacti obstacle
-        let cactusType: 'normal' | 'hLaser' = 'normal';
+        let cactusType: ObstacleType = 'normal';
         const laserChance = Math.random();
         
-        if (laserChance < 0.28) {
-          cactusType = 'hLaser'; // widescreen jump-only beam
+        // Prevent consecutive vertical lasers
+        const lastObs = state.obstacles.length > 0 ? state.obstacles[state.obstacles.length - 1] : null;
+        const wasLastObsLaser = lastObs ? lastObs.type === 'vLaser' : false;
+        const frameDiff = state.frameCount - state.lastLaserFrame;
+        const tooSoon = frameDiff < (spawnPeriod * 1.8);
+        
+        if (laserChance < 0.28 && !wasLastObsLaser && !tooSoon) {
+          cactusType = 'vLaser'; // vertical laser on lane
+          state.lastLaserFrame = state.frameCount;
         }
 
         state.obstacles.push({
@@ -1091,13 +1151,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         });
       } else {
         // Build items
-        const isOasisWater = Math.random() < 0.18; // 18% chance for shield water, 82% for sand crystal
+        const isOasisWater = Math.random() < 0.18; // 18% chance for shield water, 82% for delicious hamburger
         state.collectibles.push({
           id: `item_${state.frameCount}`,
           lane: targetLane,
           x: getLaneX(targetLane),
           y: height * 0.5 - 20,
-          type: isOasisWater ? 'oasis' : 'crystal',
+          type: isOasisWater ? 'oasis' : 'hamburger',
           width: 30,
           height: 30,
           angle: 0,
@@ -1225,12 +1285,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         // Grab item
         item.isCollected = true;
         
-        if (item.type === 'crystal') {
+        if (item.type === 'hamburger') {
           // Play pick audio and update score state
           audioSynth.playCollectCrystal();
           state.score += 50;
           onCoinsCollected(1); // Notify tracker count
-          spawnExplosion(item.x, item.y, '#22d3ee', 12);
+          spawnExplosion(item.x, item.y, '#fbbf24', 12);
         } else if (item.type === 'oasis') {
           // Play obtain kalkan audio
           audioSynth.playCollectShield();
@@ -1256,13 +1316,97 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     audioSynth.playHit();
     audioSynth.playGameOver();
     
-    const finalScore = Math.floor(stateRef.current.itemsCollected * 50 + score);
+    const finalScore = Math.floor(stateRef.current.score);
+    // Directly set score and highscore to parent so it's precisely updated on the Game Over screen
+    setScore(finalScore);
+    if (finalScore > highScore) {
+      setHighScore(finalScore);
+    }
+    
     onGameOver(finalScore);
 
     // Blast lovely cloud particles around the dead character
     const playerObj = stateRef.current.player;
     spawnExplosion(playerObj.x, playerObj.y - 20, '#f1c40f', 24);
     spawnExplosion(playerObj.x, playerObj.y - 20, '#813200', 16);
+  };
+
+  const drawHUD = (ctx: CanvasRenderingContext2D) => {
+    const { width, height } = dimensions;
+    const state = stateRef.current;
+    
+    // Draw only during PLAYING state
+    if (playState !== 'PLAYING') return;
+
+    ctx.save();
+    
+    // 1. TOP HUD CONTAINER BAR (Semi-translucent dark glassmorphism combo)
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
+    ctx.lineWidth = 2;
+    
+    const hudY = 12;
+    const hudHeight = 38;
+    const hudWidth = width - 24;
+    const hudX = 12;
+    
+    ctx.beginPath();
+    ctx.roundRect(hudX, hudY, hudWidth, hudHeight, 10);
+    ctx.fill();
+    ctx.stroke();
+    
+    // 2. HAMBURGER COUNT (Left section of HUD)
+    ctx.font = 'bold 13px "JetBrains Mono", var(--font-mono), monospace';
+    ctx.fillStyle = '#fbbf24'; // amber-400
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`🍔 ${state.itemsCollected}`, hudX + 14, hudY + hudHeight / 2);
+
+    // 3. CORE SPEED RATE BAR (Center section)
+    const currentSpeed = state.speed;
+    const initialSpeed = state.difficultySettings?.initialSpeed || INITIAL_SPEED;
+    const maxSpeed = state.difficultySettings?.maxSpeed || MAX_SPEED;
+    const speedProgress = Math.min(1.0, (currentSpeed - initialSpeed) / (maxSpeed - initialSpeed || 1));
+    
+    const barX = hudX + 70;
+    const barWidth = width * 0.28;
+    const barY = hudY + hudHeight / 2 - 4;
+    
+    // Draw speed track
+    ctx.fillStyle = 'rgba(71, 85, 105, 0.4)';
+    ctx.beginPath();
+    ctx.roundRect(barX, barY + 4, barWidth, 6, 3);
+    ctx.fill();
+    
+    // Draw active speed progress
+    const activeBarWidth = barWidth * speedProgress;
+    const speedGrad = ctx.createLinearGradient(barX, 0, barX + barWidth, 0);
+    speedGrad.addColorStop(0, '#f59e0b'); // amber-500
+    speedGrad.addColorStop(1, '#ef4444'); // rose-500
+    ctx.fillStyle = speedGrad;
+    ctx.beginPath();
+    ctx.roundRect(barX, barY + 4, activeBarWidth, 6, 3);
+    ctx.fill();
+    
+    // Speed rate text label
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = 'bold 9px "JetBrains Mono", var(--font-mono), monospace';
+    ctx.fillText(`${currentSpeed.toFixed(1)}x HIZ`, barX, barY - 1);
+
+    // 4. INSTANT LIVE SCORE (Right section, glowing orange-gold)
+    ctx.textAlign = 'right';
+    ctx.font = '800 15px "JetBrains Mono", var(--font-mono), monospace';
+    
+    const displayScore = Math.floor(state.score);
+    if (displayScore > highScore && highScore > 0) {
+      ctx.fillStyle = '#facc15'; // golden high score glow
+      ctx.fillText(`🏆 REKOR: ${displayScore}`, hudX + hudWidth - 14, hudY + hudHeight / 2);
+    } else {
+      ctx.fillStyle = '#f97316'; // orange-500
+      ctx.fillText(`SKOR: ${displayScore}`, hudX + hudWidth - 14, hudY + hudHeight / 2);
+    }
+
+    ctx.restore();
   };
 
   const renderGameFrame = () => {
@@ -1279,10 +1423,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     const state = stateRef.current;
 
-    // Render coins crystals and vaha suyu (only spawn/render if we are actually playing or have some)
+    // Render coins, hamburgers, and vaha suyu (only spawn/render if we are actually playing or have some)
     state.collectibles.forEach((item) => {
-      if (item.type === 'crystal') {
-        drawSandCrystal(ctx, item);
+      if (item.type === 'hamburger') {
+        drawHamburger(ctx, item);
       } else {
         drawOasisShieldItem(ctx, item);
       }
@@ -1299,6 +1443,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // Render particles
     drawScorePopupsAndParticles(ctx);
+
+    // Render beautiful HUD overlay
+    drawHUD(ctx);
   };
 
   // --- MOBİL DOKUNMATİK KAYDIRMA (TOUCH SWIPE INTERCEPTORS) ---

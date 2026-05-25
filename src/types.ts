@@ -7,7 +7,7 @@ export type Lane = 0 | 1 | 2; // 0: Left, 1: Middle, 2: Right
 
 export type ObstacleType = 'normal' | 'vLaser' | 'hLaser';
 
-export type ItemType = 'crystal' | 'oasis'; // crystal = Sand Crystal (+50 score), oasis = Oasis Water (3s shield)
+export type ItemType = 'hamburger' | 'oasis'; // hamburger = Delicious burger (+50 score), oasis = Oasis Water (3s shield)
 
 export interface Player {
   lane: Lane;
