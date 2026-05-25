@@ -383,38 +383,145 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const drawLanes = (ctx: CanvasRenderingContext2D) => {
     const { width, height } = dimensions;
     const state = stateRef.current;
+    
+    const horizonY = height * 0.42;
+    const vanishingX = width / 2;
 
-    // Draw 3 lanes with perspective vanishing points (highly optimized, bright sharp colors)
-    ctx.strokeStyle = '#f59e0b'; // glowing amber-500 lane marks
+    // 1. Draw 3D Asphalt Highway roadbed bed polygon
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(vanishingX - 25, horizonY);
+    ctx.lineTo(vanishingX + 25, horizonY);
+    ctx.lineTo(width + 60, height);
+    ctx.lineTo(-60, height);
+    ctx.closePath();
+    
+    const roadGrad = ctx.createLinearGradient(0, horizonY, 0, height);
+    roadGrad.addColorStop(0, '#110c08');     // extremely dark warm grey
+    roadGrad.addColorStop(0.3, '#1c1917');   // warm asphalt grey stone-800
+    roadGrad.addColorStop(1, '#0c0a09');     // deep bottom black
+    ctx.fillStyle = roadGrad;
+    ctx.fill();
+    
+    // Smooth fine perspective borders/metal safety barriers
+    ctx.strokeStyle = '#f59e0b'; // glowing amber yellow borders
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    // left border
+    ctx.moveTo(vanishingX - 25, horizonY);
+    ctx.lineTo(-60, height);
+    // right border
+    ctx.moveTo(vanishingX + 25, horizonY);
+    ctx.lineTo(width + 60, height);
+    ctx.stroke();
+    ctx.restore();
 
-    // Scroll lines
-    state.laneLinesOffset = (state.laneLinesOffset + state.speed) % 80;
+    // Scroll lines for track lines (slightly speed up scroll rate for intense warp sensation)
+    state.laneLinesOffset = (state.laneLinesOffset + state.speed * 1.5) % 80;
 
-    for (let i = 1; i < LANE_COUNT; i++) {
-       const xStart = i * (width / LANE_COUNT);
+    // 2. Draw wooden/cyber tracking sleepers in perspective!
+    const numSleepers = 11;
+    ctx.save();
+    for (let i = 0; i < numSleepers; i++) {
+      const z = (i / numSleepers + state.laneLinesOffset / 80) % 1.0;
+      const depth = Math.pow(z, 2.3); // exponential perspective spacing
+      const sleeperY = horizonY + depth * ((height - 80) - horizonY);
       
-      ctx.save();
-      ctx.setLineDash([20, 25]);
-      ctx.lineDashOffset = -state.laneLinesOffset;
-      ctx.lineWidth = 3;
+      // Sleeper expands in thickness as it moves closer to screen bottom
+      ctx.lineWidth = Math.max(1.5, 9 * depth);
+      ctx.strokeStyle = 'rgba(120, 53, 15, 0.42)'; // elegant rust/brown wood
       
-      ctx.beginPath();
-      ctx.moveTo(xStart, 0); // extended completely across the screen length (top to bottom)
-      ctx.lineTo(xStart, height);
-      ctx.stroke();
-      ctx.restore();
+      for (let l = 0; l < LANE_COUNT; l++) {
+        const laneCenterX = getLaneX(l);
+        // Spacing becomes wider closer to the viewer
+        const sL = vanishingX + (laneCenterX - 25 - vanishingX) * depth;
+        const sR = vanishingX + (laneCenterX + 25 - vanishingX) * depth;
+        
+        ctx.beginPath();
+        ctx.moveTo(sL, sleeperY);
+        ctx.lineTo(sR, sleeperY);
+        ctx.stroke();
+      }
     }
+    ctx.restore();
+
+    // 3. Draw parallel glowing metal railway tracks for each of the 3 lanes!
+    ctx.save();
+    for (let l = 0; l < LANE_COUNT; l++) {
+      const laneCenterX = getLaneX(l);
+      
+      const startDepth = 0.04;
+      const endDepth = 1.35;
+      
+      const yStart = horizonY + startDepth * ((height - 80) - horizonY);
+      const yEnd = horizonY + endDepth * ((height - 80) - horizonY);
+          
+      const rLStart = vanishingX + (laneCenterX - 20 - vanishingX) * startDepth;
+      const rLEnd = vanishingX + (laneCenterX - 20 - vanishingX) * endDepth;
+      
+      const rRStart = vanishingX + (laneCenterX + 20 - vanishingX) * startDepth;
+      const rREnd = vanishingX + (laneCenterX + 20 - vanishingX) * endDepth;
+      
+      // Steel Rail base (dark outline)
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = '#451a03'; // deep metallic copper/brown shadow
+      ctx.beginPath();
+      ctx.moveTo(rLStart, yStart);
+      ctx.lineTo(rLEnd, yEnd);
+      ctx.moveTo(rRStart, yStart);
+      ctx.lineTo(rREnd, yEnd);
+      ctx.stroke();
+
+      // Steel Rail active metallic core
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#ea580c'; // glowing bright bronze-orange steel look
+      ctx.beginPath();
+      ctx.moveTo(rLStart, yStart);
+      ctx.lineTo(rLEnd, yEnd);
+      ctx.moveTo(rRStart, yStart);
+      ctx.lineTo(rREnd, yEnd);
+      ctx.stroke();
+
+      // Top shiny highlight on rails
+      ctx.lineWidth = 0.8;
+      ctx.strokeStyle = '#ffedd5'; // bright gold highlight
+      ctx.beginPath();
+      ctx.moveTo(rLStart, yStart);
+      ctx.lineTo(rLEnd, yEnd);
+      ctx.moveTo(rRStart, yStart);
+      ctx.lineTo(rREnd, yEnd);
+      ctx.stroke();
+      
+      // Glowing neon light beam in center of each lane (Subway track guides)
+      ctx.lineWidth = 1.25;
+      ctx.strokeStyle = 'rgba(249, 115, 22, 0.15)'; 
+      ctx.beginPath();
+      ctx.moveTo(vanishingX + (laneCenterX - vanishingX) * startDepth, yStart);
+      ctx.lineTo(vanishingX + (laneCenterX - vanishingX) * endDepth, yEnd);
+      ctx.stroke();
+    }
+    ctx.restore();
   };
 
   const drawLionCharacter = (ctx: CanvasRenderingContext2D, playerObj: Player) => {
     const state = stateRef.current;
+    const { width, height } = dimensions;
+    const horizonY = height * 0.42;
+    const vanishingX = width / 2;
     
-    // Bounce height z affects visualization
-    const drawY = playerObj.y - playerObj.z;
+    // Project the logical player coordinates to 3D space
+    const relativeDepth = (playerObj.y - horizonY) / ((height - 80) - horizonY);
+    const depth = Math.max(0.01, relativeDepth);
+    
+    const renderX = vanishingX + (playerObj.x - vanishingX) * depth;
+    // Vertical jump height is scaled by perspective depth
+    const renderY = playerObj.y - (playerObj.z * depth);
+    const scale = depth;
     
     ctx.save();
-    // Shift coordinate system to make calculations simpler
-    ctx.translate(playerObj.x, drawY);
+    // Shift coordinate system to make calculations simpler under 3D perspective scaling
+    ctx.translate(renderX, renderY);
+    ctx.scale(scale, scale);
 
     // Apply scaling squish based on landing / run bobbing
     const bob = Math.sin(playerObj.animFrame * 0.22) * 1.5;
@@ -608,8 +715,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   };
 
   const drawCactusObstacle = (ctx: CanvasRenderingContext2D, enemy: Obstacle) => {
+    const { width, height } = dimensions;
+    const horizonY = height * 0.42;
+    const vanishingX = width / 2;
+
+    const relativeDepth = (enemy.y - horizonY) / ((height - 80) - horizonY);
+    const depth = Math.max(0.01, relativeDepth);
+    const renderX = vanishingX + (enemy.x - vanishingX) * depth;
+    const renderY = enemy.y;
+    const scale = depth;
+
     ctx.save();
-    ctx.translate(enemy.x, enemy.y);
+    ctx.translate(renderX, renderY);
+    ctx.scale(scale, scale);
 
     // 1. DANGER ZONE WARNING LIGHTS
     // Render Warning exclamation indicator logic for lasers
@@ -617,10 +735,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       const isFlashing = Math.floor(enemy.laserWarningTimer / 6) % 2 === 0;
       if (isFlashing) {
         ctx.fillStyle = 'rgba(239, 68, 68, 0.45)';
-        // Draw safety strip highlight for vertical lane
-        ctx.fillRect(-22, -enemy.y, 44, dimensions.height);
+        // Draw safety strip highlight for vertical lane, scaled beautifully in 3D perspective
+        ctx.fillRect(-22, -enemy.y / scale, 44, height / scale);
 
-        // Draw HUD exclamation mark warning bubble above player
+        // Draw HUD exclamation mark warning bubble above player (adjust height relative to scale)
         ctx.save();
         ctx.translate(0, -95);
         ctx.beginPath();
@@ -644,14 +762,14 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       const isFlashing = Math.floor(enemy.laserWarningTimer / 6) % 2 === 0;
       if (isFlashing) {
         ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
-        // Full horizon banner highlighter
-        ctx.fillRect(-enemy.x, -16, dimensions.width, 32);
+        // Full horizon banner highlighter across the whole 3D width
+        ctx.fillRect(-renderX / scale, -16, width / scale, 32);
 
         // Draw indicator on left and right borders of the screen
         ctx.save();
         ctx.beginPath();
-        ctx.arc(-enemy.x + 35, 0, 15, 0, Math.PI * 2);
-        ctx.arc(-enemy.x + dimensions.width - 35, 0, 15, 0, Math.PI * 2);
+        ctx.arc(-renderX / scale + 35 / scale, 0, 15, 0, Math.PI * 2);
+        ctx.arc(-renderX / scale + (width - 35) / scale, 0, 15, 0, Math.PI * 2);
         ctx.fillStyle = '#ef4444';
         ctx.fill();
 
@@ -663,8 +781,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         ctx.font = 'bold 18px monospace';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('⚡', -enemy.x + 35, 0);
-        ctx.fillText('⚡', -enemy.x + dimensions.width - 35, 0);
+        ctx.fillText('⚡', -renderX / scale + 35 / scale, 0);
+        ctx.fillText('⚡', -renderX / scale + (width - 35) / scale, 0);
         ctx.restore();
       }
     }
@@ -743,8 +861,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   };
 
   const drawHamburger = (ctx: CanvasRenderingContext2D, c: Collectible) => {
+    const { width, height } = dimensions;
+    const horizonY = height * 0.42;
+    const vanishingX = width / 2;
+
+    const relativeDepth = (c.y - horizonY) / ((height - 80) - horizonY);
+    const depth = Math.max(0.01, relativeDepth);
+    const renderX = vanishingX + (c.x - vanishingX) * depth;
+    const renderY = c.y;
+    const scale = depth;
+
     ctx.save();
-    ctx.translate(c.x, c.y);
+    ctx.translate(renderX, renderY);
+    ctx.scale(scale, scale);
     
     // Slight rocking animation instead of full wild spin for realistic food
     const rockAngle = Math.sin(Date.now() / 200) * 0.15;
@@ -824,8 +953,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   };
 
   const drawOasisShieldItem = (ctx: CanvasRenderingContext2D, c: Collectible) => {
+    const { width, height } = dimensions;
+    const horizonY = height * 0.42;
+    const vanishingX = width / 2;
+
+    const relativeDepth = (c.y - horizonY) / ((height - 80) - horizonY);
+    const depth = Math.max(0.01, relativeDepth);
+    const renderX = vanishingX + (c.x - vanishingX) * depth;
+    const renderY = c.y;
+    const scale = depth;
+
     ctx.save();
-    ctx.translate(c.x, c.y);
+    ctx.translate(renderX, renderY);
+    ctx.scale(scale, scale);
 
     // Bouncing animation
     const bounceOffset = Math.sin(Date.now() / 150) * 4.5;
@@ -881,6 +1021,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
   const drawLaserBeams = (ctx: CanvasRenderingContext2D, enemy: Obstacle) => {
     const { width, height } = dimensions;
+    const horizonY = height * 0.42;
+    const vanishingX = width / 2;
 
     // 1. DİKEY LAZER (Vertical beam fired downwards)
     if (enemy.type === 'vLaser' && enemy.laserTriggered && enemy.laserTimer > 0) {
@@ -888,34 +1030,58 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       // Translucent fading beam
       const beamAlpha = Math.min(1.0, enemy.laserTimer / 10);
-      const beamWidth = 24 + Math.sin(enemy.laserTimer * 0.8) * 4;
+      const baseBeamWidth = 24 + Math.sin(enemy.laserTimer * 0.8) * 4;
 
-      const beamGrad = ctx.createLinearGradient(enemy.x - beamWidth / 2, 0, enemy.x + beamWidth / 2, 0);
-      beamGrad.addColorStop(0, `rgba(239, 68, 68, ${0.1 * beamAlpha})`);
-      beamGrad.addColorStop(0.3, `rgba(239, 68, 68, ${0.7 * beamAlpha})`);
-      beamGrad.addColorStop(0.5, `rgba(255, 255, 255, ${0.95 * beamAlpha})`);
-      beamGrad.addColorStop(0.7, `rgba(239, 68, 68, ${0.7 * beamAlpha})`);
-      beamGrad.addColorStop(1, `rgba(239, 68, 68, ${0.1 * beamAlpha})`);
+      // Project top point (at cactus source Y)
+      const depthTop = Math.max(0.01, (enemy.y - horizonY) / ((height - 80) - horizonY));
+      const xTop = vanishingX + (getLaneX(enemy.lane) - vanishingX) * depthTop;
+      const wTop = baseBeamWidth * depthTop;
 
-      ctx.save();
-      // Fluorescent outer envelop glow (super-fast hardware vector layer)
-      ctx.fillStyle = `rgba(239, 68, 68, ${0.18 * beamAlpha})`;
-      ctx.fillRect(enemy.x - (beamWidth + 14) / 2, enemy.y, beamWidth + 14, height - enemy.y);
-      
-      ctx.fillStyle = beamGrad;
-      // fires stretching down to bottom
-      ctx.fillRect(enemy.x - beamWidth / 2, enemy.y, beamWidth, height - enemy.y);
-      ctx.restore();
+      // Project bottom point (at screen bottom Y)
+      const depthBottom = Math.max(0.01, (height - horizonY) / ((height - 80) - horizonY));
+      const xBottom = vanishingX + (getLaneX(enemy.lane) - vanishingX) * depthBottom;
+      const wBottom = baseBeamWidth * depthBottom;
 
-      // Electro static crackles on the beam
+      // Create a gradient across the trapezoid width at the bottom for beautiful glow
+      const lGrad = ctx.createLinearGradient(xBottom - wBottom / 2, 0, xBottom + wBottom / 2, 0);
+      lGrad.addColorStop(0, `rgba(239, 68, 68, 0.0)`);
+      lGrad.addColorStop(0.3, `rgba(239, 68, 68, ${0.75 * beamAlpha})`);
+      lGrad.addColorStop(0.5, `rgba(255, 255, 255, ${0.98 * beamAlpha})`);
+      lGrad.addColorStop(0.7, `rgba(239, 68, 68, ${0.75 * beamAlpha})`);
+      lGrad.addColorStop(1, `rgba(239, 68, 68, 0.0)`);
+
+      // Draw the laser safety outer glow zone (wider)
+      ctx.fillStyle = `rgba(239, 68, 68, ${0.15 * beamAlpha})`;
+      ctx.beginPath();
+      ctx.moveTo(xTop - wTop * 1.5, enemy.y);
+      ctx.lineTo(xTop + wTop * 1.5, enemy.y);
+      ctx.lineTo(xBottom + wBottom * 1.5, height);
+      ctx.lineTo(xBottom - wBottom * 1.5, height);
+      ctx.closePath();
+      ctx.fill();
+
+      // Firing actual core laser trapezoid
+      ctx.fillStyle = lGrad;
+      ctx.beginPath();
+      ctx.moveTo(xTop - wTop / 2, enemy.y);
+      ctx.lineTo(xTop + wTop / 2, enemy.y);
+      ctx.lineTo(xBottom + wBottom / 2, height);
+      ctx.lineTo(xBottom - wBottom / 2, height);
+      ctx.closePath();
+      ctx.fill();
+
+      // Electro static crackles on the beam converging with perspective
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = Math.max(1, 1.8 * depthTop);
       ctx.beginPath();
       let currentY = enemy.y;
-      ctx.moveTo(enemy.x, currentY);
+      ctx.moveTo(xTop, currentY);
       while (currentY < height) {
         currentY += 15 + Math.random() * 20;
-        const dispX = enemy.x + (Math.random() - 0.5) * (beamWidth - 6);
+        const currentDepth = Math.max(0.01, (currentY - horizonY) / ((height - 80) - horizonY));
+        const currentX = vanishingX + (getLaneX(enemy.lane) - vanishingX) * currentDepth;
+        const currentW = baseBeamWidth * currentDepth;
+        const dispX = currentX + (Math.random() - 0.5) * (currentW - 4);
         ctx.lineTo(dispX, Math.min(currentY, height));
       }
       ctx.globalAlpha = 0.5 * beamAlpha;
@@ -930,7 +1096,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.save();
 
       const beamAlpha = Math.min(1.0, enemy.laserTimer / 10);
-      const beamHeight = 18 + Math.sin(enemy.laserTimer * 0.8) * 3;
+      const relativeDepth = (enemy.y - horizonY) / ((height - 80) - horizonY);
+      const depth = Math.max(0.01, relativeDepth);
+      const beamHeight = (18 + Math.sin(enemy.laserTimer * 0.8) * 3) * depth;
 
       const hGrad = ctx.createLinearGradient(0, enemy.y - beamHeight / 2, 0, enemy.y + beamHeight / 2);
       hGrad.addColorStop(0, `rgba(239, 68, 68, ${0.15 * beamAlpha})`);
@@ -942,7 +1110,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.save();
       // Fluorescent outer envelope glow (super-fast hardware vector layer)
       ctx.fillStyle = `rgba(239, 68, 68, ${0.18 * beamAlpha})`;
-      ctx.fillRect(0, enemy.y - (beamHeight + 12) / 2, width, beamHeight + 12);
+      ctx.fillRect(0, enemy.y - (beamHeight + 12 * depth) / 2, width, beamHeight + 12 * depth);
 
       ctx.fillStyle = hGrad;
       ctx.fillRect(0, enemy.y - beamHeight / 2, width, beamHeight);
@@ -950,7 +1118,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       // Horizontally travelling lightning bolt inside beam
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = Math.max(1, 2 * depth);
       ctx.beginPath();
       let currentX = 0;
       ctx.moveTo(currentX, enemy.y);
@@ -969,6 +1137,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
   const drawScorePopupsAndParticles = (ctx: CanvasRenderingContext2D) => {
     const state = stateRef.current;
+    const { width, height } = dimensions;
+    const horizonY = height * 0.42;
+    const vanishingX = width / 2;
     
     // Draw dust & collections particles
     state.particles.forEach((p, index) => {
@@ -980,11 +1151,18 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       // Fade out dynamically relative to remaining life
       p.alpha = Math.max(0, p.life / p.maxLife);
 
+      // Project the particle coordinates to 3D space
+      const relativeDepth = (p.y - horizonY) / ((height - 80) - horizonY);
+      const depth = Math.max(0.01, relativeDepth);
+      const renderX = vanishingX + (p.x - vanishingX) * depth;
+      const renderY = p.y;
+      const renderSize = p.size * depth;
+
       ctx.save();
       ctx.fillStyle = p.color;
       ctx.globalAlpha = p.alpha;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.arc(renderX, renderY, Math.max(0.2, renderSize), 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
 
