@@ -60,20 +60,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     itemsCollected: 0,
     score: 0,
     renderedScore: 0,
-    powerupState: 'intro_eating' as 'intro_eating' | 'playing',
-    meatballIntroTimer: 180, // initial eat meatballs phase
-    meatballsEaten: 0,
-    meatballs: [] as Array<{
-      id: string;
-      lane: Lane;
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-      speed: number;
-      angle: number;
-      isCollected: boolean;
-    }>,
+    powerupState: 'playing' as 'intro_eating' | 'playing',
     player: {
       lane: 1 as 0 | 1 | 2,
       x: 0,
@@ -158,10 +145,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     state.itemsCollected = 0;
     state.score = 0;
     state.renderedScore = 0;
-    state.powerupState = 'intro_eating';
-    state.meatballIntroTimer = 180;
-    state.meatballsEaten = 0;
-    state.meatballs = [];
+    state.powerupState = 'playing';
     state.player = {
       lane: initialLane,
       x: targetX,
@@ -171,8 +155,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       width: 55,
       height: 55,
       isJumping: false,
-      shieldActive: false,
-      shieldTimer: 0,
+      shieldActive: true,
+      shieldTimer: 270, // extra long protective start shield for child friendly fun
       maxShieldTimer: 180,
       targetX: targetX,
       animFrame: 0,
@@ -182,15 +166,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     state.particles = [];
     state.laneLinesOffset = 0;
     
-    // Seed scenic background elements
+    // Seed scenic background elements (only simplified pyramids and dunes)
     state.backgroundElements = [
       { id: '1', x: dimensions.width * 0.15, y: dimensions.height * 0.2, scale: 0.9, speed: 0.1, type: 'pyramid' },
       { id: '2', x: dimensions.width * 0.75, y: dimensions.height * 0.25, scale: 0.7, speed: 0.12, type: 'pyramid' },
       { id: '3', x: dimensions.width * 0.45, y: dimensions.height * 0.15, scale: 0.5, speed: 0.08, type: 'pyramid' },
       { id: '4', x: dimensions.width * 0.2, y: dimensions.height * 0.4, scale: 1.0, speed: 0.6, type: 'dune' },
       { id: '5', x: dimensions.width * 0.8, y: dimensions.height * 0.45, scale: 1.1, speed: 0.62, type: 'dune' },
-      { id: '6', x: dimensions.width * 0.1, y: dimensions.height * 0.1, scale: 1.0, speed: 0.04, type: 'cloud' },
-      { id: '7', x: dimensions.width * 0.6, y: dimensions.height * 0.06, scale: 1.2, speed: 0.03, type: 'cloud' },
     ];
 
     setScore(0);
@@ -233,53 +215,19 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const { width, height } = dimensions;
     const state = stateRef.current;
 
-    // Golden twilight gradient
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
-    skyGrad.addColorStop(0, '#0c1020'); // Deep night space roof
-    skyGrad.addColorStop(0.3, '#1e1c3e'); // Twilight dark violet
-    skyGrad.addColorStop(0.55, '#d35400'); // Sunset orange horizon
-    skyGrad.addColorStop(0.75, '#f39c12'); // Rich glowing yellow
-    skyGrad.addColorStop(0.9, '#f1c40f'); // Golden yellow sands base
-    ctx.fillStyle = skyGrad;
+    // A single continuous cohesive twilight gradient spanning the full canvas height (no split look!)
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+    bgGrad.addColorStop(0, '#090d16');    // Cozy dark midnight top
+    bgGrad.addColorStop(0.4, '#151c2c');  // Deeper space slate
+    bgGrad.addColorStop(0.55, '#241a3c'); // Warm sunset horizon violet
+    bgGrad.addColorStop(0.8, '#18122b');  // Deep cosmic purple ground
+    bgGrad.addColorStop(1, '#0e0b16');    // Rich dark base at bottom
+    ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, width, height);
 
-    // Render distant sun
-    ctx.beginPath();
-    ctx.arc(width * 0.5, height * 0.45, 60, 0, Math.PI, true);
-    const sunGrad = ctx.createLinearGradient(0, height * 0.35, 0, height * 0.45);
-    sunGrad.addColorStop(0, '#f39c12');
-    sunGrad.addColorStop(1, '#e74c3c');
-    ctx.fillStyle = sunGrad;
-    ctx.shadowBlur = 40;
-    ctx.shadowColor = '#e74c3c';
-    ctx.fill();
-    ctx.shadowBlur = 0; // Reset shadow
-
-    // Sun lines for retro synthwave look
-    ctx.strokeStyle = '#1e1c3e';
-    ctx.lineWidth = 3;
-    for (let yOffset = height * 0.45 - 30; yOffset < height * 0.45; yOffset += 9) {
-      ctx.beginPath();
-      ctx.moveTo(width * 0.5 - 70, yOffset);
-      ctx.lineTo(width * 0.5 + 70, yOffset);
-      ctx.stroke();
-    }
-
-    // Render clouds, pyramids, and dunes
+    // Render distant sleek pyramids and dunes
     state.backgroundElements.forEach((el) => {
       ctx.save();
-      
-      if (el.type === 'cloud') {
-        el.x += el.speed;
-        if (el.x - 60 > width) el.x = -80; // Wrap around
-        
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-        ctx.beginPath();
-        ctx.arc(el.x, el.y, 25 * el.scale, 0, Math.PI * 2);
-        ctx.arc(el.x + 20 * el.scale, el.y - 10, 20 * el.scale, 0, Math.PI * 2);
-        ctx.arc(el.x - 20 * el.scale, el.y - 5, 18 * el.scale, 0, Math.PI * 2);
-        ctx.fill();
-      }
 
       if (el.type === 'pyramid') {
         const baseWidth = 110 * el.scale;
@@ -291,7 +239,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         ctx.lineTo(el.x - baseWidth / 2, el.y + pyrHeight);
         ctx.lineTo(el.x, el.y + pyrHeight);
         ctx.closePath();
-        ctx.fillStyle = 'rgba(30, 28, 62, 0.65)'; // Deep purple shadow shadow
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.45)'; // soft shadow
         ctx.fill();
 
         // Draw light face side
@@ -300,17 +248,16 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         ctx.lineTo(el.x, el.y + pyrHeight);
         ctx.lineTo(el.x + baseWidth / 2, el.y + pyrHeight);
         ctx.closePath();
-        ctx.fillStyle = 'rgba(211, 84, 0, 0.35)'; // Lit orange side
+        ctx.fillStyle = 'rgba(139, 92, 246, 0.15)'; // glowing violet modern edge
         ctx.fill();
       }
 
       if (el.type === 'dune') {
-        // Continuous horizontal scroll
-        el.y += state.speed * 0.015; // move slightly down as we speed up, or simulate forward displacement
+        el.y += state.speed * 0.015;
         
-        ctx.fillStyle = '#ffb33b';
-        ctx.strokeStyle = '#e67e22';
-        ctx.lineWidth = 3;
+        ctx.fillStyle = 'rgba(124, 58, 237, 0.12)'; // subtle translucent purple sand dune
+        ctx.strokeStyle = 'rgba(167, 139, 250, 0.25)'; // delicate violet neon wave line
+        ctx.lineWidth = 2.5;
         
         ctx.beginPath();
         ctx.moveTo(-50, height * 0.55 + 20);
@@ -320,16 +267,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         ctx.lineTo(-50, height);
         ctx.closePath();
         ctx.fill();
+        ctx.stroke();
       }
 
       ctx.restore();
     });
 
-    // Draw main ground desert floor gradient (3D perspective feel)
+    // Draw main ground desert floor overlay - glowing neon dust and depth gradient (not active separator block)
     const grGrad = ctx.createLinearGradient(0, height * 0.55, 0, height);
-    grGrad.addColorStop(0, '#e67e22'); // Horizon orange-gold
-    grGrad.addColorStop(0.4, '#d35400'); // Mid orange
-    grGrad.addColorStop(1, '#813200'); // Foreground deep red sand
+    grGrad.addColorStop(0, 'rgba(245, 158, 11, 0.14)');  // warm golden ambient dust
+    grGrad.addColorStop(0.35, 'rgba(139, 92, 246, 0.06)'); // cool transition layer
+    grGrad.addColorStop(1, 'rgba(15, 23, 42, 0.45)');      // deeper twilight shadows at the bottom
     ctx.fillStyle = grGrad;
     ctx.fillRect(0, height * 0.55, width, height - height * 0.55);
   };
@@ -339,9 +287,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const state = stateRef.current;
 
     // Draw 3 lanes with perspective vanishing points
-    ctx.strokeStyle = '#ffcc00';
-    ctx.shadowBlur = 8;
-    ctx.shadowColor = '#d35400';
+    ctx.strokeStyle = '#f59e0b'; // glowing amber-500 lane marks
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = '#d97706';
 
     // Scroll lines
     state.laneLinesOffset = (state.laneLinesOffset + state.speed) % 80;
@@ -352,7 +300,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.save();
       ctx.setLineDash([20, 25]);
       ctx.lineDashOffset = -state.laneLinesOffset;
-      ctx.lineWidth = 4;
+      ctx.lineWidth = 3;
       
       ctx.beginPath();
       ctx.moveTo(xStart, height * 0.55); // horizon starts around middle of screen
@@ -361,9 +309,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.restore();
     }
     
-    // Draw horizon line separating desert sky
-    ctx.strokeStyle = 'rgba(241, 196, 15, 0.7)';
-    ctx.lineWidth = 3;
+    // Draw soft glowing horizon blend line (not a sharp screen dividing wall)
+    ctx.strokeStyle = 'rgba(245, 158, 11, 0.35)';
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, height * 0.55);
     ctx.lineTo(width, height * 0.55);
@@ -969,83 +917,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       state.speed += ACCELERATION;
     }
 
-    // --- MEATBALL POWERUP INTRO PHASE ---
-    if (state.powerupState === 'intro_eating') {
-      state.meatballIntroTimer--;
 
-      // Spawn delicious meatballs!
-      if (state.meatballIntroTimer % 28 === 0 && state.meatballIntroTimer > 25) {
-        const targetLane = Math.floor(Math.random() * LANE_COUNT) as Lane;
-        state.meatballs.push({
-          id: `meatball_${state.frameCount}`,
-          lane: targetLane,
-          x: getLaneX(targetLane),
-          y: height * 0.45,
-          width: 40,
-          height: 40,
-          speed: state.speed,
-          angle: Math.random() * Math.PI,
-          isCollected: false
-        });
-      }
-
-      // Update meatballs
-      for (let i = state.meatballs.length - 1; i >= 0; i--) {
-        const mb = state.meatballs[i];
-        
-        // Fly towards screen coordinates
-        const relativeDepth = (mb.y - height * 0.45) / (height * 0.55);
-        mb.y += state.speed * (0.4 + relativeDepth * 1.15);
-        mb.angle += 0.045;
-
-        // Collision check with lion
-        const distY = Math.abs(mb.y - state.player.y);
-        const isInSameLane = state.player.lane === mb.lane;
-        if (isInSameLane && distY < 35 && !mb.isCollected) {
-          mb.isCollected = true;
-          state.meatballs.splice(i, 1);
-          state.meatballsEaten++;
-
-          // Yummy explosions
-          spawnExplosion(mb.x, mb.y, '#9c3d18', 12); // rich meatball brown
-          spawnExplosion(mb.x, mb.y, '#f59e0b', 8);  // golden glowing sparkles
-          
-          audioSynth.playCollectCrystal(); // happy chomp sound equivalent
-          state.score += 150;
-          continue;
-        }
-
-        if (mb.y > height + 60) {
-          state.meatballs.splice(i, 1);
-        }
-      }
-
-      // Smooth buttery runner slide
-      state.player.x += (state.player.targetX - state.player.x) * 0.14; // gentle kids action, no sudden jerks
-      state.player.animFrame++;
-
-      if (state.player.isJumping) {
-        state.player.vz += BASE_GRAVITY;
-        state.player.z -= state.player.vz;
-        if (state.player.z <= 0) {
-          state.player.z = 0;
-          state.player.vz = 0;
-          state.player.isJumping = false;
-        }
-      }
-
-      // Transition out
-      if (state.meatballIntroTimer <= 0) {
-        state.powerupState = 'playing';
-        state.player.shieldActive = true;
-        state.player.shieldTimer = state.player.maxShieldTimer * 1.5; // premium extra-long kalkan
-        audioSynth.playCollectShield();
-        // Starry particles of ultimate strength!
-        spawnExplosion(state.player.x, state.player.y - 20, '#06b6d4', 25);
-        spawnExplosion(state.player.x, state.player.y - 20, '#f59e0b', 20);
-      }
-      return; // Skip normal obstacles & threats
-    }
 
     // Gradually increment survival score
     state.score += 0.08 * (state.speed / INITIAL_SPEED);
@@ -1312,87 +1184,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     spawnExplosion(playerObj.x, playerObj.y - 20, '#813200', 16);
   };
 
-  const drawMeatball = (ctx: CanvasRenderingContext2D, mb: any) => {
-    ctx.save();
-    ctx.translate(mb.x, mb.y);
-    ctx.rotate(mb.angle);
-
-    // Glowing warm aroma
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = '#e67e22';
-
-    // Meatball brown body
-    ctx.beginPath();
-    ctx.arc(0, 0, 18, 0, Math.PI * 2);
-    const gr = ctx.createRadialGradient(-5, -5, 3, 0, 0, 18);
-    gr.addColorStop(0, '#ba8b67'); // lighter brown top
-    gr.addColorStop(0.7, '#78431b'); // rich meatball brown
-    gr.addColorStop(1, '#42240e'); // shadow brown
-    ctx.fillStyle = gr;
-    ctx.fill();
-
-    ctx.shadowBlur = 0; // reset
-
-    // Little specks of seasonings (parsley/herbs)
-    ctx.fillStyle = '#22543d';
-    ctx.beginPath();
-    ctx.arc(-6, -4, 2, 0, Math.PI * 2);
-    ctx.arc(4, 5, 1.8, 0, Math.PI * 2);
-    ctx.arc(5, -6, 1.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // White gloss highlight for freshness
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-    ctx.beginPath();
-    ctx.arc(-5, -5, 3.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.restore();
-  };
-
-  const drawIntroMeatballOverlay = (ctx: CanvasRenderingContext2D) => {
-    const { width, height } = dimensions;
-    const state = stateRef.current;
-    
-    ctx.save();
-    ctx.textAlign = 'center';
-    
-    // Dark translucent backdrop
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
-    ctx.fillRect(0, height * 0.28, width, 105);
-
-    // Cute retro-colored yellow border lines
-    ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 3.5;
-    ctx.beginPath();
-    ctx.moveTo(0, height * 0.28);
-    ctx.lineTo(width, height * 0.28);
-    ctx.moveTo(0, height * 0.28 + 105);
-    ctx.lineTo(width, height * 0.28 + 105);
-    ctx.stroke();
-
-    // Fun child-friendly title!
-    ctx.font = 'bold 23px "Inter", sans-serif';
-    ctx.fillStyle = '#fbbf24';
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = '#dc2626';
-    ctx.fillText('🥩 KÖFTE ZAMANI! 🦁', width * 0.5, height * 0.33);
-
-    // Warm instruction text
-    ctx.font = '600 13px "Inter", sans-serif';
-    ctx.fillStyle = '#f8fafc';
-    ctx.shadowBlur = 0;
-    ctx.fillText('Köfteleri ye, güç topla!', width * 0.5, height * 0.37);
-
-    // Multi-color dynamic star indicating shield status next
-    const counterMsg = `Yenilen Köfte: ${state.meatballsEaten}`;
-    ctx.font = '500 12px "Inter", sans-serif';
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillText(counterMsg, width * 0.5, height * 0.41);
-
-    ctx.restore();
-  };
-
   const renderGameFrame = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -1406,13 +1197,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     drawLanes(ctx);
 
     const state = stateRef.current;
-
-    // Render delicious meatballs!
-    if (state.meatballs && state.meatballs.length > 0) {
-      state.meatballs.forEach((mb) => {
-        drawMeatball(ctx, mb);
-      });
-    }
 
     // Render coins crystals and vaha suyu (only spawn/render if we are actually playing or have some)
     state.collectibles.forEach((item) => {
@@ -1434,11 +1218,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // Render particles
     drawScorePopupsAndParticles(ctx);
-
-    // Meatball intro overlay!
-    if (state.powerupState === 'intro_eating') {
-      drawIntroMeatballOverlay(ctx);
-    }
   };
 
   // --- MOBİL DOKUNMATİK KAYDIRMA (TOUCH SWIPE INTERCEPTORS) ---
@@ -1537,48 +1316,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         }}
       />
 
-      {/* Touch overlays for manual button controls alongside Swipe */}
-      {playState === 'PLAYING' && (
-        <div id="mobileControlsOverlay" className="absolute bottom-4 left-0 right-0 px-4 flex justify-between items-center pointer-events-none z-20">
-          <div className="flex gap-2">
-            <button
-              id="btnLeft"
-              type="button"
-              className="w-14 h-14 bg-slate-900/75 hover:bg-slate-900 active:bg-slate-950 text-white rounded-full flex items-center justify-center border-2 border-slate-700/60 shadow-lg select-none active:scale-95 transition-all pointer-events-auto cursor-pointer"
-              onMouseDown={(e) => { e.preventDefault(); laneShiftLeft(); }}
-              onTouchStart={(e) => { e.preventDefault(); laneShiftLeft(); }}
-            >
-              <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24">
-                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-              </svg>
-            </button>
-            <button
-              id="btnRight"
-              type="button"
-              className="w-14 h-14 bg-slate-900/75 hover:bg-slate-900 active:bg-slate-950 text-white rounded-full flex items-center justify-center border-2 border-slate-700/60 shadow-lg select-none active:scale-95 transition-all pointer-events-auto cursor-pointer"
-              onMouseDown={(e) => { e.preventDefault(); laneShiftRight(); }}
-              onTouchStart={(e) => { e.preventDefault(); laneShiftRight(); }}
-            >
-              <svg className="w-8 h-8 fill-current" viewBox="0 0 24 24">
-                <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
-              </svg>
-            </button>
-          </div>
-          
-          <button
-            id="btnJump"
-            type="button"
-            className="w-16 h-16 bg-cyan-600/70 hover:bg-cyan-600 active:bg-cyan-700 text-white rounded-full flex flex-col items-center justify-center border-2 border-cyan-400/50 shadow-lg select-none active:scale-95 transition-all pointer-events-auto cursor-pointer"
-            onMouseDown={(e) => { e.preventDefault(); triggerJump(); }}
-            onTouchStart={(e) => { e.preventDefault(); triggerJump(); }}
-          >
-            <svg className="w-7 h-7 fill-none stroke-current stroke-3" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
-            </svg>
-            <span className="text-[9px] font-bold tracking-tight">UP</span>
-          </button>
-        </div>
-      )}
+
     </div>
   );
 };

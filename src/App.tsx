@@ -95,9 +95,9 @@ export default function App() {
   };
 
   return (
-    <div id="appContainer" className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-orange-500 selection:text-white">
+    <div id="appContainer" className="h-screen max-h-screen overflow-hidden bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-orange-500 selection:text-white">
       {/* 1. TOP HEADER BANNER */}
-      <header id="mainHeader" className="w-full bg-slate-900 border-b border-slate-800 py-3.5 px-6 shadow-md z-10">
+      <header id="mainHeader" className="w-full bg-slate-900 border-b border-slate-800 py-3 px-6 shadow-md z-10 shrink-0">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
           
           <div className="flex items-center gap-3">
@@ -116,6 +116,22 @@ export default function App() {
 
           {/* Quick HUD Score and Audio parameters */}
           <div className="flex flex-wrap items-center gap-3">
+            <a
+              href=""
+              onClick={(e) => {
+                e.preventDefault();
+                try {
+                  window.open(window.location.href, '_blank', 'noopener,noreferrer');
+                } catch (err) {
+                  // safety fallback
+                }
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-400 font-sans"
+              title="Oyunu Yeni Sekmede Aç"
+            >
+              <span>🚀 Yeni Sayfada Aç</span>
+            </a>
+
             <button
               onClick={() => setIsFullScreen(!isFullScreen)}
               className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer border border-amber-500/30 bg-amber-500/10 hover:bg-amber-505/20 active:scale-95 text-amber-400 font-sans"
@@ -145,11 +161,11 @@ export default function App() {
       </header>
 
       {/* 2. GAME SECTION CORE */}
-      <main id="mainGameContent" className={isFullScreen ? "flex-grow w-full max-w-none px-2 py-4 flex flex-col justify-center items-center" : "flex-1 max-w-7xl w-full mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch"}>
+      <main id="mainGameContent" className={isFullScreen ? "flex-1 min-h-0 w-full max-w-none px-2 py-3 flex flex-col justify-center items-center overflow-hidden" : "flex-1 min-h-0 max-w-7xl w-full mx-auto px-4 py-4 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch overflow-hidden"}>
         
         {/* LEFT SIDEBAR: GUIDE & CONTROLS TUTORIAL */}
         {!isFullScreen && (
-          <section id="guidesCard" className="lg:col-span-3.5 flex flex-col justify-between gap-6 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg max-h-[85vh] overflow-y-auto">
+          <section id="guidesCard" className="lg:col-span-3.5 flex flex-col justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg h-full max-h-full overflow-y-auto">
             <div>
               <div className="flex items-center gap-2 mb-4 border-b border-slate-800 pb-2.5">
                 <HelpCircle className="w-5 h-5 text-cyan-400" />
@@ -214,10 +230,10 @@ export default function App() {
         )}
 
         {/* CENTER COLUMN: ACTIVE ARCADE PLAYABLE CANVAS */}
-        <section id="arcadeCabinet" className={isFullScreen ? "w-full max-w-[500px] flex flex-col gap-3 items-center justify-center flex-grow py-1" : "lg:col-span-5 flex flex-col gap-4 items-center justify-center"}>
+        <section id="arcadeCabinet" className={isFullScreen ? "w-full max-w-[500px] flex flex-col gap-2 items-center justify-center flex-1 min-h-0 py-1" : "lg:col-span-5 flex flex-col gap-3 items-center justify-center flex-1 min-h-0 py-1"}>
           
           {/* Active Shield Progress Indicators */}
-          <div className="w-full max-w-[500px] h-8 flex items-center justify-between px-3 bg-slate-900 rounded-lg border border-slate-800 select-none">
+          <div className="w-full max-w-[500px] h-8 flex items-center justify-between px-3 bg-slate-900 rounded-lg border border-slate-800 select-none shrink-0">
             {activeShield ? (
               <div className="w-full flex items-center gap-2">
                 <span className="text-[10px] font-mono text-cyan-400 font-bold tracking-wider shrink-0 animate-pulse">
@@ -237,7 +253,7 @@ export default function App() {
             )}
           </div>
 
-          <div className="relative w-full game-container flex justify-center items-center">
+          <div className="relative flex-1 h-0 w-full game-container flex justify-center items-center">
             
             <GameCanvas
               playState={playState}
@@ -291,13 +307,13 @@ export default function App() {
 
                   <div className="text-[11px] text-slate-400 leading-relaxed font-sans text-left space-y-2">
                     <p className="flex items-start gap-1.5 font-bold text-amber-300">
-                      👶 4-5 Yaş Çocuk Modu Özellikleri:
+                      👶 4-5 Yaş Çocuk Moduna Özel:
                     </p>
                     <p className="flex items-start gap-1.5 pl-2">
-                      🥩 Lion starts game by eating meatballs!
+                      🚶 Yavaş akış ve yumuşak zıplama kontrolleri.
                     </p>
                     <p className="flex items-start gap-1.5 pl-2">
-                      🚶 Slower movement, soft smooth jumping controls.
+                      🛡️ Oyuna başlarken ekstra koruyucu kalkan desteği!
                     </p>
                   </div>
                 </div>
@@ -375,7 +391,7 @@ export default function App() {
 
         {/* RIGHT SIDEBAR: HIGH SCORE TABLES AND DESERT WISDOM */}
         {!isFullScreen && (
-          <section id="leaderboardCard" className="lg:col-span-3.5 flex flex-col justify-between gap-6 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg max-h-[85vh] overflow-y-auto">
+          <section id="leaderboardCard" className="lg:col-span-3.5 flex flex-col justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg h-full max-h-full overflow-y-auto">
             <div>
               <div className="flex items-center gap-2 mb-4 border-b border-slate-800 pb-2.5">
                 <Trophy className="w-5 h-5 text-amber-500 animate-bounce" />
@@ -431,8 +447,8 @@ export default function App() {
       </main>
 
       {/* 3. FOOTER */}
-      <footer id="mainFooter" className="w-full bg-slate-900 border-t border-slate-800 py-3 px-6 text-center text-xs font-mono text-slate-400">
-        <p>🦁 Aslan Kaçış Oyunu © 2026 • Yerli & Milli PWA Retro Game</p>
+      <footer id="mainFooter" className="w-full bg-slate-900 border-t border-slate-800 py-1.5 px-6 text-center text-[10px] font-mono text-slate-500 shrink-0">
+        <p>🦁 Aslan Kaçış Oyunu © 2026 • Retro Runner</p>
       </footer>
     </div>
   );

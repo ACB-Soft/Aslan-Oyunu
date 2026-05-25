@@ -30,9 +30,10 @@ body {
   text-shadow: 0 0 10px rgba(239, 68, 68, 0.6), 0 0 20px rgba(239, 68, 68, 0.4);
 }
 
-/* Custom canvas container ratio */
+/* Custom canvas container ratio - now optimized to fit exactly inside available height */
 .game-container {
   aspect-ratio: 9/16;
-  max-height: 85vh;
+  max-height: 100%;
+  max-width: 100%;
 }
 
