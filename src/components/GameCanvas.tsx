@@ -540,7 +540,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.fillStyle = shieldGrad;
       ctx.fill();
 
-      // Shield outer glowing ring (highly optimized, draw a double circle instead of shadowBlur)
+      // Shield outer glowing ring
       ctx.beginPath();
       ctx.arc(0, -22, playerObj.width * 0.9, 0, Math.PI * 2);
       ctx.strokeStyle = 'rgba(6, 182, 212, 0.45)';
@@ -564,58 +564,63 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.fill();
     ctx.restore();
 
-    // 2. LION ANATOMY (VEKTOREL CANVASES)
+    // 2. LION ANATOMY (BACK-VIEW ARCHITECTURE)
 
-    // Tail (Kuyruk)
+    // Running back legs
+    ctx.fillStyle = '#e67e22'; // Darker base gold/orange for legs in back shadow
+    const legSwing = Math.sin(playerObj.animFrame * 0.3) * 12;
+    
+    // Draw legs jogging from under the body rump
+    ctx.fillRect(-12, 8 + Math.max(0, legSwing), 6, 14);
+    ctx.fillRect(6, 8 + Math.max(0, -legSwing), 6, 14);
+    ctx.fillRect(-6, 8 + Math.max(0, -legSwing), 6, 14);
+    ctx.fillRect(12, 8 + Math.max(0, legSwing), 6, 14);
+
+    // Draw little dark golden soft paws
+    ctx.fillStyle = '#813200';
+    ctx.fillRect(-12, 20 + Math.max(0, legSwing), 6, 3);
+    ctx.fillRect(6, 20 + Math.max(0, -legSwing), 6, 3);
+    ctx.fillRect(-6, 20 + Math.max(0, -legSwing), 6, 3);
+    ctx.fillRect(12, 20 + Math.max(0, legSwing), 6, 3);
+
+    // Tail attached to the rump in back-view!
     ctx.save();
-    ctx.strokeStyle = '#e67e22';
+    ctx.strokeStyle = '#f39c12';
     ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(-18, 5);
-    // Curl tail upwards or wild oscillation when running or jumping
-    const tailOsc = Math.sin(playerObj.animFrame * 0.15) * 12;
-    ctx.quadraticCurveTo(-30, -5 + tailOsc, -24, -20 + tailOsc);
+    // attached at rump center
+    ctx.moveTo(0, 3 + bob);
+    // swing playfully as he runs
+    const tailSwing = Math.sin(playerObj.animFrame * 0.18) * 16;
+    ctx.quadraticCurveTo(tailSwing - 12, 16 + bob, tailSwing + 4, 25 + bob);
     ctx.stroke();
-    // Tail tip (pom-pom)
+
+    // Tail fluffy dark tip pom-pom
     ctx.fillStyle = '#813200';
     ctx.beginPath();
-    ctx.arc(-24, -22 + tailOsc, 6, 0, Math.PI * 2);
+    ctx.arc(tailSwing + 4, 28 + bob, 6.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
-    // Running legs
-    ctx.fillStyle = '#f39c12';
-    const legSwing = Math.sin(playerObj.animFrame * 0.25) * 10;
-    
-    // Front and back left legs
-    ctx.fillRect(-14, 10 + Math.max(0, legSwing), 6, 12);
-    ctx.fillRect(8, 10 + Math.max(0, -legSwing), 6, 12);
-    // Front and back right legs (opposite swing phase)
-    ctx.fillRect(-6, 10 + Math.max(0, -legSwing), 6, 12);
-    ctx.fillRect(14, 10 + Math.max(0, legSwing), 6, 12);
-
-    // Lion Body (Gövde)
+    // Lion Body (Rump and Back - drawn as a warm golden circle/pear)
     ctx.fillStyle = '#f39c12';
     ctx.beginPath();
-    ctx.ellipse(0, 0 + bob, 25, 18, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0 + bob, 24, 20, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Fluffy Lion Chest Tuft
+    // Soft dark golden highlight of shoulder blades / spine
     ctx.fillStyle = '#d35400';
     ctx.beginPath();
-    ctx.moveTo(-15, -10 + bob);
-    ctx.lineTo(2, 5 + bob);
-    ctx.lineTo(15, -10 + bob);
-    ctx.closePath();
-    ctx.fill();
+    // spine strip in back center
+    ctx.fillRect(-1.5, -16 + bob, 3, 14);
 
-    // 3. THE MANE (Gösterişli Aslan Yelesi)
-    // Draw 10 interlocking outer circles for fluffy cartoon mane
+    // 3. THE MANE (Gösterişli Aslan Yelesi - behind the head, covering shoulders)
     ctx.fillStyle = '#813200'; // Dark rich brown mane
-    const manePoints = 11;
-    const maneRadius = 24 + Math.abs(bob) * 0.4;
+    const manePoints = 12;
+    const maneRadius = 25 + Math.abs(bob) * 0.4;
     const headCenterX = 0;
-    const headCenterY = -24 + bob;
+    const headCenterY = -23 + bob;
     
     ctx.save();
     ctx.beginPath();
@@ -624,93 +629,87 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       const maneX = headCenterX + Math.cos(angle) * maneRadius;
       const maneY = headCenterY + Math.sin(angle) * maneRadius;
       
-      // Arc radius creates a nice scallop pattern
-      ctx.arc(maneX, maneY, 13, 0, Math.PI * 2);
+      ctx.arc(maneX, maneY, 14, 0, Math.PI * 2);
     }
     ctx.fill();
     ctx.restore();
 
-    // 4. THE FACE & HEAD (Kafa ve Kulaklar)
+    // 4. THE BACK OF HEAD (Solid golden yellow representing crown/hair of head, no face!)
     ctx.fillStyle = '#f1c40f'; // Bright golden yellow head skin
     ctx.beginPath();
     ctx.arc(headCenterX, headCenterY, 17, 0, Math.PI * 2);
     ctx.fill();
 
-    // Ears (Kulaklar - Yellow triangles with pink interiors)
-    // Left ear
-    ctx.fillStyle = '#f1c40f';
+    // Ears seen from behind (golden yellow back-facing triangles, no pink inner)
+    // Left ear back
+    ctx.fillStyle = '#813200'; // dark foundation shadow
     ctx.beginPath();
-    ctx.moveTo(headCenterX - 14, headCenterY - 12);
+    ctx.moveTo(headCenterX - 13, headCenterY - 11);
     ctx.lineTo(headCenterX - 18, headCenterY - 26);
-    ctx.lineTo(headCenterX - 4, headCenterY - 16);
+    ctx.lineTo(headCenterX - 4, headCenterY - 15);
     ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#ff9999'; // Inner pink
-    ctx.beginPath();
-    ctx.moveTo(headCenterX - 12, headCenterY - 14);
-    ctx.lineTo(headCenterX - 15, headCenterY - 23);
-    ctx.lineTo(headCenterX - 6, headCenterY - 16);
-    ctx.closePath();
-    ctx.fill();
-
-    // Right ear
-    ctx.fillStyle = '#f1c40f';
-    ctx.beginPath();
-    ctx.moveTo(headCenterX + 14, headCenterY - 12);
-    ctx.lineTo(headCenterX + 18, headCenterY - 26);
-    ctx.lineTo(headCenterX + 4, headCenterY - 16);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#ff9999'; // Inner pink
-    ctx.beginPath();
-    ctx.moveTo(headCenterX + 12, headCenterY - 14);
-    ctx.lineTo(headCenterX + 15, headCenterY - 23);
-    ctx.lineTo(headCenterX + 6, headCenterY - 16);
-    ctx.closePath();
-    ctx.fill();
-
-    // Sparkling Eyes (Gözler)
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(headCenterX - 6, headCenterY - 4, 3.5, 0, Math.PI * 2);
-    ctx.arc(headCenterX + 6, headCenterY - 4, 3.5, 0, Math.PI * 2);
     ctx.fill();
     
-    // Pupils
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = '#f1c40f'; // golden yellow outer fur
     ctx.beginPath();
-    // Dilate slightly as we speed up
-    const eyePupilRadius = 1.8 + Math.min(1.0, state.speed * 0.05);
-    ctx.arc(headCenterX - 5.5, headCenterY - 4, eyePupilRadius, 0, Math.PI * 2);
-    ctx.arc(headCenterX + 6.5, headCenterY - 4, eyePupilRadius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Snout / Muzzle
-    ctx.fillStyle = '#f39c12';
-    ctx.beginPath();
-    ctx.arc(headCenterX - 3, headCenterY + 4, 5, 0, Math.PI * 2);
-    ctx.arc(headCenterX + 3, headCenterY + 4, 5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Nose
-    ctx.fillStyle = '#000000';
-    ctx.beginPath();
-    ctx.moveTo(headCenterX - 3, headCenterY + 1);
-    ctx.lineTo(headCenterX + 3, headCenterY + 1);
-    ctx.lineTo(headCenterX, headCenterY + 45 * 0.1);
+    ctx.moveTo(headCenterX - 11, headCenterY - 13);
+    ctx.lineTo(headCenterX - 15, headCenterY - 23);
+    ctx.lineTo(headCenterX - 5, headCenterY - 15);
     ctx.closePath();
     ctx.fill();
 
-    // Mouth / Smile line
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 1.5;
+    // Right ear back
+    ctx.fillStyle = '#813200'; // dark foundation shadow
     ctx.beginPath();
-    ctx.arc(headCenterX - 2.5, headCenterY + 5, 2.5, 0, Math.PI);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(headCenterX + 2.5, headCenterY + 5, 2.5, 0, Math.PI);
-    ctx.stroke();
+    ctx.moveTo(headCenterX + 13, headCenterY - 11);
+    ctx.lineTo(headCenterX + 18, headCenterY - 26);
+    ctx.lineTo(headCenterX + 4, headCenterY - 15);
+    ctx.closePath();
+    ctx.fill();
 
+    ctx.fillStyle = '#f1c40f'; // golden yellow outer fur
+    ctx.beginPath();
+    ctx.moveTo(headCenterX + 11, headCenterY - 13);
+    ctx.lineTo(headCenterX + 15, headCenterY - 23);
+    ctx.lineTo(headCenterX + 5, headCenterY - 15);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  };
+
+  const drawProjected3DStrip = (
+    ctx: CanvasRenderingContext2D,
+    lane: number,
+    yStart: number,
+    yEnd: number,
+    widthAtPlayerLevel: number,
+    fillColor: string | CanvasGradient
+  ) => {
+    const { width, height } = dimensions;
+    const horizonY = height * 0.42;
+    const vanishingX = width / 2;
+    const bottomY = height - 80;
+
+    const getProj = (yVal: number) => {
+      const d = Math.max(0.01, (yVal - horizonY) / (bottomY - horizonY));
+      const xMid = vanishingX + (getLaneX(lane) - vanishingX) * d;
+      const halfW = (widthAtPlayerLevel / 2) * d;
+      return { xLeft: xMid - halfW, xRight: xMid + halfW };
+    };
+
+    const top = getProj(yStart);
+    const bottom = getProj(yEnd);
+
+    ctx.save();
+    ctx.fillStyle = fillColor;
+    ctx.beginPath();
+    ctx.moveTo(top.xLeft, yStart);
+    ctx.lineTo(top.xRight, yStart);
+    ctx.lineTo(bottom.xRight, yEnd);
+    ctx.lineTo(bottom.xLeft, yEnd);
+    ctx.closePath();
+    ctx.fill();
     ctx.restore();
   };
 
@@ -725,19 +724,23 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const renderY = enemy.y;
     const scale = depth;
 
+    // 1. DANGER ZONE WARNING LIGHTS (Rendered in absolute perspective BEFORE translate)
+    if (enemy.type === 'vLaser' && enemy.laserWarningTimer > 0) {
+      const isFlashing = Math.floor(enemy.laserWarningTimer / 6) % 2 === 0;
+      if (isFlashing) {
+        // Draw safety strip highlight for vertical lane, scaled beautifully in 3D perspective along the road axis
+        drawProjected3DStrip(ctx, enemy.lane, horizonY, height, 44, 'rgba(239, 68, 68, 0.45)');
+      }
+    }
+
     ctx.save();
     ctx.translate(renderX, renderY);
     ctx.scale(scale, scale);
 
-    // 1. DANGER ZONE WARNING LIGHTS
-    // Render Warning exclamation indicator logic for lasers
+    // Render Warning exclamation indicator logic for lasers (in scaled 3D context above the cactus)
     if (enemy.type === 'vLaser' && enemy.laserWarningTimer > 0) {
       const isFlashing = Math.floor(enemy.laserWarningTimer / 6) % 2 === 0;
       if (isFlashing) {
-        ctx.fillStyle = 'rgba(239, 68, 68, 0.45)';
-        // Draw safety strip highlight for vertical lane, scaled beautifully in 3D perspective
-        ctx.fillRect(-22, -enemy.y / scale, 44, height / scale);
-
         // Draw HUD exclamation mark warning bubble above player (adjust height relative to scale)
         ctx.save();
         ctx.translate(0, -95);
@@ -1273,6 +1276,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // 4. RANDOM DUST PARTICLES (Gives a visual sensation of high running speed)
     state.dustParticleTimer++;
+    const horizonY = height * 0.42;
     if (state.dustParticleTimer >= 3) {
       state.dustParticleTimer = 0;
       // Add a dusty particle flying past the screen
@@ -1280,7 +1284,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       state.particles.push({
         id: Math.random().toString(36).substring(2, 9),
         x: getLaneX(dustLane) + (Math.random() - 0.5) * 60,
-        y: height * 0.55, // spawn at horizon
+        y: horizonY, // spawn perfectly at horizon
         vx: (Math.random() - 0.5) * 1.5,
         vy: state.speed * 1.05, // travel back faster than game speed
         size: 1 + Math.random() * 2.5,
@@ -1318,7 +1322,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           id: `obs_${state.frameCount}`,
           lane: targetLane,
           x: getLaneX(targetLane),
-          y: height * 0.5 - 20, // trigger at horizon
+          y: horizonY, // spawn perfectly at horizon
           type: cactusType,
           width: 32,
           height: 52,
@@ -1334,7 +1338,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           id: `item_${state.frameCount}`,
           lane: targetLane,
           x: getLaneX(targetLane),
-          y: height * 0.5 - 20,
+          y: horizonY, // spawn perfectly at horizon
           type: isOasisWater ? 'oasis' : 'hamburger',
           width: 30,
           height: 30,
@@ -1347,8 +1351,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     // 6. UPDATE CACTI AND DETECT CRASHES
     state.obstacles.forEach((obs, index) => {
       // 3D perspective scroll speed factor (larger size as it gets near)
-      const relativeDepth = (obs.y - height * 0.5) / (height * 0.5); // 0 at horizon, 1 at screen bottom
-      const obsSpeed = state.speed * (0.35 + relativeDepth * 0.85);
+      const relativeDepth = (obs.y - horizonY) / ((height - 80) - horizonY); // math correct!
+      const obsSpeed = state.speed * (0.35 + Math.max(0, relativeDepth) * 0.85);
       obs.y += obsSpeed;
 
       // Handle continuous warning / active laser routines
@@ -1451,8 +1455,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     // 7. COLLECT CYRSTALS AND DRINK SHIELD WATER
     state.collectibles.forEach((item, index) => {
       // 3D perspective velocity
-      const relativeDepth = (item.y - height * 0.5) / (height * 0.5);
-      item.y += state.speed * (0.35 + relativeDepth * 0.85);
+      const relativeDepth = (item.y - horizonY) / ((height - 80) - horizonY);
+      item.y += state.speed * (0.35 + Math.max(0, relativeDepth) * 0.85);
       item.angle += 0.05; // Spin rotation
 
       const distY = Math.abs(item.y - state.player.y);
