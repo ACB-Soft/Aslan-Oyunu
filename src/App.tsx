@@ -117,9 +117,6 @@ export default function App() {
               <h1 id="gameTitle" className="text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-300 bg-clip-text text-transparent glow-orange">
                 ASLAN KAÇIŞ
               </h1>
-              <p id="gameSubtitle" className="text-[9px] sm:text-[10px] font-mono text-slate-400 font-medium tracking-wide">
-                PWA RETRO RUNNER • v2.0
-              </p>
             </div>
           </div>
 
@@ -152,8 +149,8 @@ export default function App() {
         <section id="arcadeCabinet" className="w-full max-w-[500px] flex flex-col gap-1 items-center justify-center flex-1 min-h-0 py-0.5">
           
           {/* Active Shield Progress Indicators */}
-          <div className="w-full max-w-[500px] h-6 flex items-center justify-between px-3 bg-slate-900 rounded-lg border border-slate-800 select-none shrink-0">
-            {activeShield ? (
+          {activeShield && (
+            <div className="w-full max-w-[500px] h-6 flex items-center justify-between px-3 bg-slate-900 rounded-lg border border-slate-800 select-none shrink-0">
               <div className="w-full flex items-center gap-2">
                 <span className="text-[9px] font-mono text-cyan-400 font-bold tracking-wider shrink-0 animate-pulse">
                   🛡️ VAHA KALKANI AKTİF
@@ -165,12 +162,8 @@ export default function App() {
                   />
                 </div>
               </div>
-            ) : (
-              <div className="w-full text-center text-[9px] font-mono text-slate-500 font-semibold tracking-wide">
-                GÜÇLENDİRİCİ BEKLENİYOR • VAHA SUYU TOPLA
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="relative flex-1 h-0 w-full game-container flex justify-center items-center">
             
