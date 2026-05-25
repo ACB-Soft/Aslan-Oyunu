@@ -116,22 +116,6 @@ export default function App() {
 
           {/* Quick HUD Score and Audio parameters */}
           <div className="flex flex-wrap items-center gap-3">
-            <a
-              href=""
-              onClick={(e) => {
-                e.preventDefault();
-                try {
-                  window.open(window.location.href, '_blank', 'noopener,noreferrer');
-                } catch (err) {
-                  // safety fallback
-                }
-              }}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer border border-emerald-500/40 bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-400 font-sans"
-              title="Oyunu Yeni Sekmede Aç"
-            >
-              <span>🚀 Yeni Sayfada Aç</span>
-            </a>
-
             <button
               onClick={() => setIsFullScreen(!isFullScreen)}
               className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer border border-amber-500/30 bg-amber-500/10 hover:bg-amber-505/20 active:scale-95 text-amber-400 font-sans"

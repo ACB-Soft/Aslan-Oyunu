@@ -118,7 +118,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const laneWidth = dimensions.width / LANE_COUNT;
     state.player.targetX = (state.player.lane * laneWidth) + (laneWidth / 2);
     state.player.x = state.player.targetX;
-    state.player.y = dimensions.height - 130; // base y height near screen bottom
+    state.player.y = dimensions.height - 80; // base y height closer to screen bottom
   }, [dimensions]);
 
   // Handle external restart requests from parent components
@@ -149,7 +149,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     state.player = {
       lane: initialLane,
       x: targetX,
-      y: dimensions.height - 130,
+      y: dimensions.height - 80, // base y height closer to screen bottom
       z: 0,
       vz: 0,
       width: 55,
@@ -166,13 +166,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     state.particles = [];
     state.laneLinesOffset = 0;
     
-    // Seed scenic background elements (only simplified pyramids and dunes)
+    // Seed scenic background elements (rolling dunes and static cacti silhouettes)
     state.backgroundElements = [
-      { id: '1', x: dimensions.width * 0.15, y: dimensions.height * 0.2, scale: 0.9, speed: 0.1, type: 'pyramid' },
-      { id: '2', x: dimensions.width * 0.75, y: dimensions.height * 0.25, scale: 0.7, speed: 0.12, type: 'pyramid' },
-      { id: '3', x: dimensions.width * 0.45, y: dimensions.height * 0.15, scale: 0.5, speed: 0.08, type: 'pyramid' },
-      { id: '4', x: dimensions.width * 0.2, y: dimensions.height * 0.4, scale: 1.0, speed: 0.6, type: 'dune' },
-      { id: '5', x: dimensions.width * 0.8, y: dimensions.height * 0.45, scale: 1.1, speed: 0.62, type: 'dune' },
+      { id: '1', x: dimensions.width * 0.15, y: dimensions.height * 0.35, scale: 0.9, speed: 0.1, type: 'dune' },
+      { id: '2', x: dimensions.width * 0.75, y: dimensions.height * 0.38, scale: 1.1, speed: 0.12, type: 'dune' },
+      { id: '3', x: dimensions.width * 0.3, y: dimensions.height * 0.28, scale: 0.6, speed: 0.08, type: 'cactus_static' },
+      { id: '4', x: dimensions.width * 0.85, y: dimensions.height * 0.32, scale: 0.7, speed: 0.09, type: 'cactus_static' },
+      { id: '5', x: dimensions.width * 0.5, y: dimensions.height * 0.22, scale: 0.5, speed: 0.05, type: 'cactus_static' },
     ];
 
     setScore(0);
@@ -215,54 +215,46 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     const { width, height } = dimensions;
     const state = stateRef.current;
 
-    // A single continuous cohesive twilight gradient spanning the full canvas height (no split look!)
+    // A single continuous cohesive warm sunset gradient spanning the full canvas height (no split look)
     const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
-    bgGrad.addColorStop(0, '#090d16');    // Cozy dark midnight top
-    bgGrad.addColorStop(0.4, '#151c2c');  // Deeper space slate
-    bgGrad.addColorStop(0.55, '#241a3c'); // Warm sunset horizon violet
-    bgGrad.addColorStop(0.8, '#18122b');  // Deep cosmic purple ground
-    bgGrad.addColorStop(1, '#0e0b16');    // Rich dark base at bottom
+    bgGrad.addColorStop(0, '#781d00');     // Rich deep sunset red top
+    bgGrad.addColorStop(0.35, '#c2410c');  // Warm orange-red sky
+    bgGrad.addColorStop(0.55, '#ea580c');  // Golden orange horizon
+    bgGrad.addColorStop(0.75, '#be185d');  // Soft dusky transition pinkish-orange
+    bgGrad.addColorStop(1, '#7c2d12');     // Ground deep warm terracotta terracotta
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, width, height);
 
-    // Render distant sleek pyramids and dunes
+    // Render a large glowing sunset sun
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(width * 0.5, height * 0.38, 68, 0, Math.PI * 2);
+    const sunGrad = ctx.createRadialGradient(width * 0.5, height * 0.38, 2, width * 0.5, height * 0.38, 68);
+    sunGrad.addColorStop(0, '#fffbeb');   // bright warm core
+    sunGrad.addColorStop(0.3, '#fef08a');  // glowing warm yellow
+    sunGrad.addColorStop(0.7, '#f97316');  // sunset orange edge
+    sunGrad.addColorStop(1, 'rgba(249, 115, 22, 0)'); // ambient glow dissipation
+    ctx.fillStyle = sunGrad;
+    ctx.shadowBlur = 35;
+    ctx.shadowColor = '#f97316';
+    ctx.fill();
+    ctx.restore();
+
+    // Render distant dunes and cactus silhouettes
     state.backgroundElements.forEach((el) => {
       ctx.save();
 
-      if (el.type === 'pyramid') {
-        const baseWidth = 110 * el.scale;
-        const pyrHeight = 90 * el.scale;
-        
-        // Draw left shadow side
-        ctx.beginPath();
-        ctx.moveTo(el.x, el.y);
-        ctx.lineTo(el.x - baseWidth / 2, el.y + pyrHeight);
-        ctx.lineTo(el.x, el.y + pyrHeight);
-        ctx.closePath();
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.45)'; // soft shadow
-        ctx.fill();
-
-        // Draw light face side
-        ctx.beginPath();
-        ctx.moveTo(el.x, el.y);
-        ctx.lineTo(el.x, el.y + pyrHeight);
-        ctx.lineTo(el.x + baseWidth / 2, el.y + pyrHeight);
-        ctx.closePath();
-        ctx.fillStyle = 'rgba(139, 92, 246, 0.15)'; // glowing violet modern edge
-        ctx.fill();
-      }
-
       if (el.type === 'dune') {
-        el.y += state.speed * 0.015;
+        el.y += state.speed * 0.012;
         
-        ctx.fillStyle = 'rgba(124, 58, 237, 0.12)'; // subtle translucent purple sand dune
-        ctx.strokeStyle = 'rgba(167, 139, 250, 0.25)'; // delicate violet neon wave line
-        ctx.lineWidth = 2.5;
+        ctx.fillStyle = 'rgba(124, 45, 18, 0.4)'; // warm sand dune highlight
+        ctx.strokeStyle = 'rgba(251, 146, 60, 0.25)'; // delicate sandy neon line
+        ctx.lineWidth = 2.0;
         
         ctx.beginPath();
-        ctx.moveTo(-50, height * 0.55 + 20);
-        ctx.quadraticCurveTo(width * 0.25, height * 0.53, width * 0.55, height * 0.56);
-        ctx.quadraticCurveTo(width * 0.8, height * 0.58, width + 50, height * 0.54);
+        ctx.moveTo(-50, el.y);
+        ctx.quadraticCurveTo(width * 0.3, el.y - 25 * el.scale, width * 0.65, el.y + 10);
+        ctx.quadraticCurveTo(width * 0.85, el.y + 25, width + 50, el.y - 10);
         ctx.lineTo(width + 50, height);
         ctx.lineTo(-50, height);
         ctx.closePath();
@@ -270,14 +262,60 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         ctx.stroke();
       }
 
+      if (el.type === 'pyramid') {
+        // Render stylized pyramids in desert gold tints
+        const baseWidth = 120 * el.scale;
+        const pyrHeight = 85 * el.scale;
+        
+        ctx.beginPath();
+        ctx.moveTo(el.x, el.y);
+        ctx.lineTo(el.x - baseWidth / 2, el.y + pyrHeight);
+        ctx.lineTo(el.x, el.y + pyrHeight);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(124, 45, 18, 0.45)';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(el.x, el.y);
+        ctx.lineTo(el.x, el.y + pyrHeight);
+        ctx.lineTo(el.x + baseWidth / 2, el.y + pyrHeight);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(251, 146, 60, 0.2)';
+        ctx.fill();
+      }
+
+      if (el.type === 'cactus_static') {
+        ctx.fillStyle = 'rgba(120, 53, 15, 0.65)'; // warm deep brown silhouette
+        const cSize = 25 * el.scale;
+        
+        // draw main trunks
+        ctx.beginPath();
+        ctx.roundRect(el.x - 3, el.y - cSize, 6, cSize, 3);
+        ctx.fill();
+        
+        // left curved arm
+        ctx.beginPath();
+        ctx.moveTo(el.x - 3, el.y - cSize * 0.65);
+        ctx.quadraticCurveTo(el.x - 12, el.y - cSize * 0.65, el.x - 12, el.y - cSize * 0.9);
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(120, 53, 15, 0.65)';
+        ctx.stroke();
+        
+        // right curved arm
+        ctx.beginPath();
+        ctx.moveTo(el.x + 3, el.y - cSize * 0.45);
+        ctx.quadraticCurveTo(el.x + 12, el.y - cSize * 0.45, el.x + 12, el.y - cSize * 0.75);
+        ctx.stroke();
+      }
+
       ctx.restore();
     });
 
-    // Draw main ground desert floor overlay - glowing neon dust and depth gradient (not active separator block)
+    // Draw main ground desert sand floor glow overlay (seamlessly blends)
     const grGrad = ctx.createLinearGradient(0, height * 0.55, 0, height);
-    grGrad.addColorStop(0, 'rgba(245, 158, 11, 0.14)');  // warm golden ambient dust
-    grGrad.addColorStop(0.35, 'rgba(139, 92, 246, 0.06)'); // cool transition layer
-    grGrad.addColorStop(1, 'rgba(15, 23, 42, 0.45)');      // deeper twilight shadows at the bottom
+    grGrad.addColorStop(0, 'rgba(249, 115, 22, 0.15)');  // pleasant warm orange dust glow
+    grGrad.addColorStop(0.6, 'rgba(124, 45, 18, 0.1)');  // sunset terracotta shades
+    grGrad.addColorStop(1, 'rgba(43, 14, 6, 0.35)');      // cozy ground base
     ctx.fillStyle = grGrad;
     ctx.fillRect(0, height * 0.55, width, height - height * 0.55);
   };
@@ -303,19 +341,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       ctx.lineWidth = 3;
       
       ctx.beginPath();
-      ctx.moveTo(xStart, height * 0.55); // horizon starts around middle of screen
+      ctx.moveTo(xStart, 0); // extended completely across the screen length (top to bottom)
       ctx.lineTo(xStart, height);
       ctx.stroke();
       ctx.restore();
     }
-    
-    // Draw soft glowing horizon blend line (not a sharp screen dividing wall)
-    ctx.strokeStyle = 'rgba(245, 158, 11, 0.35)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, height * 0.55);
-    ctx.lineTo(width, height * 0.55);
-    ctx.stroke();
     
     ctx.shadowBlur = 0; // Reset shadows
   };
@@ -985,12 +1015,10 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       if (decider < 0.62) {
         // Build cacti obstacle
-        let cactusType: 'normal' | 'vLaser' | 'hLaser' = 'normal';
+        let cactusType: 'normal' | 'hLaser' = 'normal';
         const laserChance = Math.random();
         
-        if (laserChance < 0.23) {
-          cactusType = 'vLaser'; // vertical beam
-        } else if (laserChance < 0.44) {
+        if (laserChance < 0.28) {
           cactusType = 'hLaser'; // widescreen jump-only beam
         }
 
@@ -998,8 +1026,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
           id: `obs_${state.frameCount}`,
           lane: targetLane,
           x: getLaneX(targetLane),
-          y: height * 0.5 // trigger at horizon
-          - 20,
+          y: height * 0.5 - 20, // trigger at horizon
           type: cactusType,
           width: 32,
           height: 52,
