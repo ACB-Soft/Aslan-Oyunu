@@ -104,38 +104,38 @@ export default function App() {
   };
 
   return (
-    <div id="appContainer" className="h-screen max-h-screen overflow-hidden bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-orange-500 selection:text-white">
+    <div id="appContainer" className="h-screen max-h-screen overflow-hidden bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-orange-500 selection:text-white pb-1">
       {/* 1. TOP HEADER BANNER (Slim design to fit single page) */}
-      <header id="mainHeader" className="w-full bg-slate-900 border-b border-slate-800 py-1.5 px-4 shadow-sm z-10 shrink-0">
+      <header id="mainHeader" className="w-full bg-slate-900 border-b border-slate-800 py-1 px-3 shadow-sm z-10 shrink-0">
         <div className="max-w-7xl mx-auto flex flex-row justify-between items-center gap-2">
           
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-tr from-amber-500 to-orange-600 p-1 px-1.5 rounded-lg border border-amber-400 shadow-sm">
-              <span className="text-md font-bold font-sans">🦁</span>
+          <div className="flex items-center gap-1.5">
+            <div className="bg-gradient-to-tr from-amber-500 to-orange-600 p-0.5 px-1 rounded-md border border-amber-400 shadow-sm">
+              <span className="text-sm font-bold font-sans">🦁</span>
             </div>
             <div>
-              <h1 id="gameTitle" className="text-lg sm:text-xl font-bold tracking-tight bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-300 bg-clip-text text-transparent glow-orange">
+              <h1 id="gameTitle" className="text-base sm:text-lg font-bold tracking-tight bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-300 bg-clip-text text-transparent glow-orange">
                 ASLAN KAÇIŞ
               </h1>
             </div>
           </div>
 
           {/* Quick HUD Score and Audio parameters */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-slate-950/85 py-1 px-2.5 rounded-md border border-slate-800">
-              <Trophy className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-[10px] sm:text-xs font-mono font-medium text-slate-400">EN YÜKSEK:</span>
-              <span id="txtHighScore" className="text-xs sm:text-sm font-mono font-bold text-amber-400">{highScore}</span>
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 bg-slate-950/85 py-0.5 px-2 rounded-md border border-slate-800">
+              <Trophy className="w-3 h-3 text-amber-500" />
+              <span className="text-[9px] sm:text-[10px] font-mono font-medium text-slate-400">EN YÜKSEK:</span>
+              <span id="txtHighScore" className="text-xs font-mono font-bold text-amber-400">{highScore}</span>
             </div>
 
             <button
               id="audioIconButton"
               type="button"
               onClick={toggleSound}
-              className="p-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all text-slate-300 hover:text-white rounded-md border border-slate-700 cursor-pointer"
+              className="p-1 bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all text-slate-300 hover:text-white rounded-md border border-slate-700 cursor-pointer"
               title={settings.soundEnabled ? 'Sesi Kapat' : 'Sesi Aç'}
             >
-              {settings.soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-rose-500" />}
+              {settings.soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5 text-rose-500" />}
             </button>
           </div>
 
@@ -143,10 +143,10 @@ export default function App() {
       </header>
 
       {/* 2. GAME SECTION CORE */}
-      <main id="mainGameContent" className="flex-1 min-h-0 w-full max-w-none px-1 py-1 flex flex-col justify-center items-center overflow-hidden">
+      <main id="mainGameContent" className="flex-1 min-h-0 w-full max-w-none px-1 py-0.5 flex flex-col justify-center items-center overflow-hidden">
         
         {/* CENTER COLUMN: ACTIVE ARCADE PLAYABLE CANVAS (tighter margins) */}
-        <section id="arcadeCabinet" className="w-full max-w-[500px] flex flex-col gap-1 items-center justify-center flex-1 min-h-0 py-0.5">
+        <section id="arcadeCabinet" className="w-full max-w-[480px] max-h-[88vh] flex flex-col gap-0.5 items-center justify-center flex-1 min-h-0 py-0.5">
           
           {/* Active Shield Progress Indicators */}
           {activeShield && (
@@ -188,51 +188,51 @@ export default function App() {
 
             {/* A. MENU START GAME SCREEN */}
             {playState === 'MENU' && (
-              <div id="screenMenu" className="absolute inset-0 bg-slate-950/90 flex flex-col justify-center items-center p-4 text-center select-none z-30 rounded-2xl animate-fade-in">
+              <div id="screenMenu" className="absolute inset-0 bg-slate-950/90 flex flex-col justify-center items-center p-3 text-center select-none z-30 rounded-2xl animate-fade-in">
                 
                 {/* Visual retro decorative background sand dust */}
-                <div className="absolute top-1/4 left-1/4 w-12 h-12 bg-orange-500/10 blur-xl rounded-full" />
-                <div className="absolute top-1/2 right-1/4 w-16 h-16 bg-blue-500/10 blur-xl rounded-full" />
+                <div className="absolute top-1/4 left-1/4 w-10 h-10 bg-orange-500/10 blur-xl rounded-full" />
+                <div className="absolute top-1/2 right-1/4 w-12 h-12 bg-blue-500/10 blur-xl rounded-full" />
 
-                <div className="mb-4">
-                  <div className="text-4xl mb-2 animate-[bounce_2.5s_infinite]">🦁</div>
-                  <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-300 bg-clip-text text-transparent glow-orange">
+                <div className="mb-2.5">
+                  <div className="text-3xl mb-1 animate-[bounce_2.5s_infinite]">🦁</div>
+                  <h2 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-300 bg-clip-text text-transparent glow-orange">
                     ASLAN KAÇIŞ
                   </h2>
-                  <p className="text-[11px] font-mono text-amber-500 font-semibold mt-0.5 tracking-wider uppercase">
+                  <p className="text-[10px] font-mono text-amber-500 font-semibold mt-0.5 tracking-wider uppercase">
                     Çöl Lazerlerinden Kaçış Macerası
                   </p>
                 </div>
 
-                <div className="w-full max-w-sm space-y-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800 mb-4 z-10">
-                  <div className="flex justify-between items-center bg-slate-950 p-2 rounded-lg border border-slate-800">
+                <div className="w-full max-w-sm space-y-1.5 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 mb-2.5 z-10">
+                  <div className="flex justify-between items-center bg-slate-950 p-1.5 rounded-lg border border-slate-800">
                     <span className="text-xs font-mono font-medium text-slate-400">Zorluk Seviyesi:</span>
                     <button
                       id="btnToggleDifficulty"
                       type="button"
                       onClick={toggleDifficulty}
-                      className="text-xs font-bold px-2.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-700 capitalize text-amber-500 cursor-pointer"
+                      className="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-700 capitalize text-amber-500 cursor-pointer"
                     >
                       {settings.difficulty === 'easy' ? 'Kolay' : settings.difficulty === 'normal' ? 'Normal' : 'Zor'}
                     </button>
                   </div>
 
-                  <div className="text-[10px] text-slate-400 leading-relaxed font-sans text-left space-y-0.5 bg-slate-950 p-2 rounded-lg border border-slate-800">
-                    <p className="font-bold text-amber-300 text-[11px]">
+                  <div className="text-[9.5px] text-slate-400 leading-relaxed font-sans text-left space-y-0.5 bg-slate-950 p-1.5 rounded-lg border border-slate-800">
+                    <p className="font-bold text-amber-300 text-[10px]">
                       {settings.difficulty === 'easy' ? '👶 Kolay Mod Özellikleri:' : settings.difficulty === 'normal' ? '🦁 Normal Mod Özellikleri:' : '🔥 Zor Mod Özellikleri:'}
                     </p>
                     {settings.difficulty === 'easy' && (
                       <>
                         <p className="flex items-start gap-1">🚶 Ekstra yavaş akış ve yumuşak zıplama.</p>
                         <p className="flex items-start gap-1">🛡️ Ekstra uzun koruyucu kalkan desteği.</p>
-                        <p className="flex items-start gap-1">🌵 Daha uzun lazer uyarı süresi ve seyrek engeller.</p>
+                        <p className="flex items-start gap-1">🌵 Lazerler çok daha nadir gelir.</p>
                       </>
                     )}
                     {settings.difficulty === 'normal' && (
                       <>
                         <p className="flex items-start gap-1">🚶 Dengeli akış ve tatlı zıplama hissiyatı.</p>
                         <p className="flex items-start gap-1">🛡️ Bölüm başında standart kalkan koruması.</p>
-                        <p className="flex items-start gap-1">⚡ Orta dereceli refleks gereksinimi.</p>
+                        <p className="flex items-start gap-1">🌵 Klasik çöl lazerleri mücadelesi.</p>
                       </>
                     )}
                     {settings.difficulty === 'hard' && (
@@ -249,9 +249,9 @@ export default function App() {
                   id="btnStartGame"
                   type="button"
                   onClick={startGame}
-                  className="w-full max-w-sm py-2.5 px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-sans font-bold text-md rounded-xl tracking-wide shadow-md border-2 border-amber-300/40 transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full max-w-sm py-2 px-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-sans font-bold text-sm rounded-xl tracking-wide shadow-md border-2 border-amber-300/40 transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Play className="w-4 h-4 fill-current" />
+                  <Play className="w-3.5 h-3.5 fill-current" />
                   OYUNU BAŞLAT
                 </button>
               </div>
@@ -259,23 +259,23 @@ export default function App() {
 
             {/* B. GAME OVER SCREEN */}
             {playState === 'GAMEOVER' && (
-              <div id="screenGameOver" className="absolute inset-0 bg-slate-950/95 flex flex-col justify-center items-center p-4 text-center select-none z-30 rounded-2xl">
+              <div id="screenGameOver" className="absolute inset-0 bg-slate-950/95 flex flex-col justify-center items-center p-3 text-center select-none z-30 rounded-2xl">
                 
-                <div id="iconCrack" className="text-4xl mb-2">💥</div>
+                <div id="iconCrack" className="text-3xl mb-1.5">💥</div>
                 
-                <h2 className="text-3xl font-extrabold tracking-tight text-rose-500 glow-red mb-1">
+                <h2 className="text-2xl font-extrabold tracking-tight text-rose-500 glow-red mb-0.5">
                   OYUN BİTTİ
                 </h2>
                 
-                <p className="text-[11px] text-slate-400 font-mono mb-4 uppercase tracking-widest">
+                <p className="text-[10px] text-slate-400 font-mono mb-2.5 uppercase tracking-widest">
                   Kaktüs ya da Lazer Seni Durdurdu!
                 </p>
 
-                <div className="w-full max-w-xs bg-slate-900 border border-slate-800 rounded-xl p-3.5 mb-4 space-y-2 font-mono">
+                <div className="w-full max-w-xs bg-slate-900 border border-slate-800 rounded-xl p-2.5 mb-2.5 space-y-1.5 font-mono">
                   
                   {isNewHighScore && (
-                    <div className="bg-amber-500/20 text-amber-300 py-1 px-3 rounded-lg text-xs font-bold border border-amber-500/40 flex items-center justify-center gap-1.5 animate-pulse">
-                      <Sparkles className="w-3.5 h-3.5" />
+                    <div className="bg-amber-500/20 text-amber-300 py-0.5 px-2 rounded-lg text-[10px] font-bold border border-amber-500/40 flex items-center justify-center gap-1 animate-pulse">
+                      <Sparkles className="w-3 h-3" />
                       YENİ REKOR!
                     </div>
                   )}
@@ -291,14 +291,14 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="w-full max-w-xs space-y-2 z-10">
+                <div className="w-full max-w-xs space-y-1.5 z-10">
                   <button
                     id="btnPlayAgain"
                     type="button"
                     onClick={startGame}
-                    className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-sans font-bold rounded-xl tracking-wide shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-2 px-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-sans font-bold text-sm rounded-xl tracking-wide shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <RotateCcw className="w-3.5 h-3.5 stroke-[3px]" />
+                    <RotateCcw className="w-3 h-3 stroke-[3px]" />
                     TEKRAR BAŞLA
                   </button>
 
@@ -306,7 +306,7 @@ export default function App() {
                     id="btnReturnMenu"
                     type="button"
                     onClick={() => setPlayState('MENU')}
-                    className="w-full py-1.5 px-4 bg-slate-900 hover:bg-slate-800 text-slate-300 font-mono text-[11px] rounded-xl border border-slate-800 cursor-pointer"
+                    className="w-full py-1 px-3 bg-slate-900 hover:bg-slate-800 text-slate-300 font-mono text-[10px] rounded-xl border border-slate-800 cursor-pointer"
                   >
                     ANA MENÜYE DÖN
                   </button>

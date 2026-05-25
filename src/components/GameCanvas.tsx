@@ -1129,9 +1129,9 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         const lastObs = state.obstacles.length > 0 ? state.obstacles[state.obstacles.length - 1] : null;
         const wasLastObsLaser = lastObs ? lastObs.type === 'vLaser' : false;
         const frameDiff = state.frameCount - state.lastLaserFrame;
-        const tooSoon = frameDiff < (spawnPeriod * 1.8);
+        const tooSoon = frameDiff < (spawnPeriod * 3.5); // increased buffer between lasers
         
-        if (laserChance < 0.28 && !wasLastObsLaser && !tooSoon) {
+        if (laserChance < 0.10 && !wasLastObsLaser && !tooSoon) {
           cactusType = 'vLaser'; // vertical laser on lane
           state.lastLaserFrame = state.frameCount;
         }
