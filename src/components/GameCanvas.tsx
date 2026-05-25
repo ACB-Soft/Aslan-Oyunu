@@ -53,6 +53,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  const [isVictorious, setIsVictorious] = useState(false);
+
   // References to keep state across animation frames without triggering constant React re-renders
   const stateRef = useRef({
     speed: INITIAL_SPEED,
@@ -61,6 +63,11 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     score: 0,
     renderedScore: 0,
     powerupState: 'playing' as 'intro_eating' | 'playing',
+    level: 1,
+    distanceValue: 0,
+    levelUpMessageTimer: 0,
+    levelUpBannerText: '',
+    victory: false,
     player: {
       lane: 1 as 0 | 1 | 2,
       x: 0,
@@ -193,6 +200,12 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     state.score = 0;
     state.renderedScore = 0;
     state.powerupState = 'playing';
+    state.level = 1;
+    state.distanceValue = 0;
+    state.levelUpMessageTimer = 0;
+    state.levelUpBannerText = '';
+    state.victory = false;
+    setIsVictorious(false);
     state.player = {
       lane: initialLane,
       x: targetX,
@@ -262,53 +275,188 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
   const drawParallaxBackground = (ctx: CanvasRenderingContext2D) => {
     const { width, height } = dimensions;
     const state = stateRef.current;
+    const level = state.level;
+    const horizonY = height * 0.42;
 
-    // A single continuous cohesive warm sunset gradient spanning the full canvas height (no split look)
+    ctx.save();
+    // 1. DYNAMIC ATMOSPHERIC GRADIENTS DEPENDING ON LEVEL
     const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
-    bgGrad.addColorStop(0, '#781d00');     // Rich deep sunset red top
-    bgGrad.addColorStop(0.35, '#c2410c');  // Warm orange-red sky
-    bgGrad.addColorStop(0.55, '#ea580c');  // Golden orange horizon
-    bgGrad.addColorStop(0.75, '#be185d');  // Soft dusky transition pinkish-orange
-    bgGrad.addColorStop(1, '#7c2d12');     // Ground deep warm terracotta terracotta
+    
+    if (level === 1) {
+      // Sakin Çöl (Golden Day Desert)
+      bgGrad.addColorStop(0, '#0284c7');     // Sky blue
+      bgGrad.addColorStop(0.35, '#bae6fd');  // Soft light cyan sky
+      bgGrad.addColorStop(0.55, '#fef08a');  // Sunny golden horizon
+      bgGrad.addColorStop(0.75, '#fed7aa');  // Amber sunset transition
+      bgGrad.addColorStop(1, '#ea580c');     // Terracotta sandy ground
+    } else if (level === 2) {
+      // Kızıl Tehlike (Crimson Threat Sunset)
+      bgGrad.addColorStop(0, '#781d00');     // Rich deep sunset red top
+      bgGrad.addColorStop(0.35, '#c2410c');  // Warm orange-red sky
+      bgGrad.addColorStop(0.55, '#ea580c');  // Golden orange horizon
+      bgGrad.addColorStop(0.75, '#be185d');  // Soft dusky transition pinkish-orange
+      bgGrad.addColorStop(1, '#7c2d12');     // Ground deep warm terracotta
+    } else if (level === 3) {
+      // Siber Günbatımı (Synthwave Violet Magenta)
+      bgGrad.addColorStop(0, '#1e1b4b');     // Midnight indigo top
+      bgGrad.addColorStop(0.35, '#581c87');  // Neon deep violet
+      bgGrad.addColorStop(0.55, '#c084fc');  // Glow neon pink
+      bgGrad.addColorStop(0.75, '#f472b6');  // High-contrast hot magenta transition
+      bgGrad.addColorStop(1, '#3b0764');     // Cyber purple terrain
+    } else if (level === 4) {
+      // Dijital Fırtına (Lightning Electric Blue Night)
+      const isLightningFlash = state.frameCount % 230 > 220; // spontaneous clean visual flash
+      if (isLightningFlash) {
+        bgGrad.addColorStop(0, '#e0f2fe');   // Bright electric flash blue
+        bgGrad.addColorStop(0.5, '#7dd3fc');
+        bgGrad.addColorStop(1, '#0c4a6e');
+      } else {
+        bgGrad.addColorStop(0, '#030712');   // Deep obsidian space
+        bgGrad.addColorStop(0.35, '#1e293b'); // Dark indigo storm sky
+        bgGrad.addColorStop(0.55, '#0f172a'); // Slick deep border
+        bgGrad.addColorStop(0.75, '#0284c7'); // Electric cyan horizon highlight
+        bgGrad.addColorStop(1, '#0f172a');   // Pitch bottom cyber ground
+      }
+    } else {
+      // Level 5: Kozmik Vaha (Universal Cosmos Galaxy Final)
+      bgGrad.addColorStop(0, '#0f051d');     // Space nebula purple top
+      bgGrad.addColorStop(0.35, '#1e1b4b');  // Deep cosmic stellar indigo
+      bgGrad.addColorStop(0.55, '#db2777');  // Sparkling pink twilight
+      bgGrad.addColorStop(0.75, '#fb923c');  // Golden supernova glow
+      bgGrad.addColorStop(1, '#311042');     // Cosmic magenta dunes ground
+    }
+
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, width, height);
 
-    // Render a large glowing sunset sun with fast vector concentric glow rings
-    ctx.save();
-    
-    // Ambient Outer Corona 2
-    ctx.beginPath();
-    ctx.arc(width * 0.5, height * 0.38, 110, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(249, 115, 22, 0.07)';
-    ctx.fill();
+    // 2. SUN/HEAVENLY BODIES
+    if (level === 1) {
+      // Golden glowing sun for Level 1
+      ctx.beginPath();
+      ctx.arc(width * 0.5, height * 0.38, 55, 0, Math.PI * 2);
+      const sunGrad = ctx.createRadialGradient(width * 0.5, height * 0.38, 2, width * 0.5, height * 0.38, 55);
+      sunGrad.addColorStop(0, '#ffffff'); // pure sun
+      sunGrad.addColorStop(0.5, '#fef08a'); // radiant sweet yellow
+      sunGrad.addColorStop(1, 'rgba(253, 224, 71, 0.05)');
+      ctx.fillStyle = sunGrad;
+      ctx.fill();
+    } else if (level === 2) {
+      // Dangerous blood-red sun for Level 2
+      ctx.beginPath();
+      ctx.arc(width * 0.5, height * 0.38, 68, 0, Math.PI * 2);
+      const sunGrad = ctx.createRadialGradient(width * 0.5, height * 0.38, 2, width * 0.5, height * 0.38, 68);
+      sunGrad.addColorStop(0, '#fee2e2'); // bright center
+      sunGrad.addColorStop(0.4, '#f87171'); // burning crimson red
+      sunGrad.addColorStop(1, 'rgba(220, 38, 38, 0.05)');
+      ctx.fillStyle = sunGrad;
+      ctx.fill();
+    } else if (level === 3) {
+      // Giant Synthwave Grid Sun with custom horizontal lines for Level 3
+      const cx = width * 0.5;
+      const cy = height * 0.38;
+      const rad = 75;
 
-    // Ambient Outer Corona 1
-    ctx.beginPath();
-    ctx.arc(width * 0.5, height * 0.38, 88, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(249, 115, 22, 0.16)';
-    ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+      const sunGrad = ctx.createLinearGradient(cx, cy - rad, cx, cy + rad);
+      sunGrad.addColorStop(0, '#f43f5e'); // hot rose
+      sunGrad.addColorStop(0.5, '#d946ef'); // electric magenta
+      sunGrad.addColorStop(1, '#a855f7'); // neon purple
+      ctx.fillStyle = sunGrad;
+      ctx.fill();
 
-    // Central Radiant Sun body
-    ctx.beginPath();
-    ctx.arc(width * 0.5, height * 0.38, 68, 0, Math.PI * 2);
-    const sunGrad = ctx.createRadialGradient(width * 0.5, height * 0.38, 2, width * 0.5, height * 0.38, 68);
-    sunGrad.addColorStop(0, '#fffbeb');   // bright warm core
-    sunGrad.addColorStop(0.3, '#fef08a');  // glowing warm yellow
-    sunGrad.addColorStop(0.7, '#f97316');  // sunset orange edge
-    sunGrad.addColorStop(1, 'rgba(249, 115, 22, 0.1)'); // ambient glow dissipation
-    ctx.fillStyle = sunGrad;
-    ctx.fill();
+      // Horizontal retro scan-line cuts
+      ctx.fillStyle = 'rgba(30, 27, 75, 0.95)'; // matches background indigo
+      for (let yOffset = -rad + 15; yOffset < rad; yOffset += 14) {
+        const lineH = Math.max(1.8, 4.5 * ((yOffset + rad) / (rad * 2))); // stripes widen at the bottom
+        ctx.fillRect(cx - rad - 5, cy + yOffset, (rad + 5) * 2, lineH);
+      }
+    } else if (level === 4) {
+      // Dark Lunar Eclipse with glowing cyan corona for Level 4
+      const cx = width * 0.5;
+      const cy = height * 0.38;
+      const rad = 50;
+      
+      // Corona glow
+      ctx.beginPath();
+      ctx.arc(cx, cy, rad + 14, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(6, 182, 212, 0.35)'; // bright cyan halo
+      ctx.fill();
+
+      // Eclipse body (dark core)
+      ctx.beginPath();
+      ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+      ctx.fillStyle = '#1e293b';
+      ctx.fill();
+
+      // Glowing blue thin arc
+      ctx.beginPath();
+      ctx.arc(cx - 3, cy - 2, rad, 0.1 * Math.PI, 1.8 * Math.PI);
+      ctx.strokeStyle = '#22d3ee';
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+
+      // Static stardust particles on Level 4
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+      for (let s = 1; s <= 15; s++) {
+        const sX = (cx * s * 1.34) % width;
+        const sY = (cy * s * 0.82) % (height * 0.5);
+        ctx.fillRect(sX, sY, 1.5, 1.5);
+      }
+    } else {
+      // Binary Stars & Floating Star particles on Level 5
+      const cx = width * 0.5;
+      const cy = height * 0.38;
+      
+      // Draw 20 glowing stars blinking randomly
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      for (let s = 0; s < 25; s++) {
+        const blink = Math.sin((state.frameCount * 0.05) + s * 1.2) * 0.4 + 0.6;
+        ctx.save();
+        ctx.globalAlpha = blink;
+        const sX = (cx + s * 187) % width;
+        const sY = (cy + s * 93) % (height * 0.5);
+        ctx.beginPath();
+        ctx.arc(sX, sY, 1.5 + (s % 2), 0, Math.PI * 2);
+        ctx.fillStyle = s % 2 === 0 ? '#facc15' : '#f472b6';
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Draw shiny galaxy center
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 110, 24, Math.PI / 12, 0, Math.PI * 2);
+      const galGrad = ctx.createRadialGradient(cx, cy, 2, cx, cy, 110);
+      galGrad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+      galGrad.addColorStop(0.3, 'rgba(244, 114, 182, 0.15)');
+      galGrad.addColorStop(1, 'rgba(30, 27, 75, 0.0)');
+      ctx.fillStyle = galGrad;
+      ctx.fill();
+    }
     ctx.restore();
 
-    // Render distant dunes and cactus silhouettes
+    // Render distant dunes and cactus silhouettes (scroll in 3D parallax)
     state.backgroundElements.forEach((el) => {
       ctx.save();
 
+      // Dune color based on level
+      let duneFill = 'rgba(124, 45, 18, 0.4)';
+      let duneStroke = 'rgba(251, 146, 60, 0.25)';
+      if (level === 3) {
+        duneFill = 'rgba(59, 7, 100, 0.45)';
+        duneStroke = 'rgba(192, 132, 252, 0.25)';
+      } else if (level === 4) {
+        duneFill = 'rgba(15, 23, 42, 0.6)';
+        duneStroke = 'rgba(6, 182, 212, 0.2)';
+      } else if (level === 5) {
+        duneFill = 'rgba(49, 16, 66, 0.5)';
+        duneStroke = 'rgba(244, 114, 182, 0.2)';
+      }
+
       if (el.type === 'dune') {
         el.y += state.speed * 0.012;
-        
-        ctx.fillStyle = 'rgba(124, 45, 18, 0.4)'; // warm sand dune highlight
-        ctx.strokeStyle = 'rgba(251, 146, 60, 0.25)'; // delicate sandy neon line
+        ctx.fillStyle = duneFill;
+        ctx.strokeStyle = duneStroke;
         ctx.lineWidth = 2.0;
         
         ctx.beginPath();
@@ -323,7 +471,6 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       }
 
       if (el.type === 'pyramid') {
-        // Render stylized pyramids in desert gold tints
         const baseWidth = 120 * el.scale;
         const pyrHeight = 85 * el.scale;
         
@@ -332,7 +479,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         ctx.lineTo(el.x - baseWidth / 2, el.y + pyrHeight);
         ctx.lineTo(el.x, el.y + pyrHeight);
         ctx.closePath();
-        ctx.fillStyle = 'rgba(124, 45, 18, 0.45)';
+        ctx.fillStyle = level === 3 ? 'rgba(59, 7, 100, 0.5)' : 'rgba(124, 45, 18, 0.45)';
         ctx.fill();
 
         ctx.beginPath();
@@ -340,28 +487,25 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         ctx.lineTo(el.x, el.y + pyrHeight);
         ctx.lineTo(el.x + baseWidth / 2, el.y + pyrHeight);
         ctx.closePath();
-        ctx.fillStyle = 'rgba(251, 146, 60, 0.2)';
+        ctx.fillStyle = level === 3 ? 'rgba(192, 132, 252, 0.2)' : 'rgba(251, 146, 60, 0.2)';
         ctx.fill();
       }
 
       if (el.type === 'cactus_static') {
-        ctx.fillStyle = 'rgba(120, 53, 15, 0.65)'; // warm deep brown silhouette
+        ctx.fillStyle = level === 3 ? 'rgba(88, 28, 135, 0.75)' : (level === 4 ? 'rgba(15, 23, 42, 0.8)' : 'rgba(120, 53, 15, 0.65)');
         const cSize = 25 * el.scale;
         
-        // draw main trunks
         ctx.beginPath();
         ctx.roundRect(el.x - 3, el.y - cSize, 6, cSize, 3);
         ctx.fill();
         
-        // left curved arm
         ctx.beginPath();
         ctx.moveTo(el.x - 3, el.y - cSize * 0.65);
         ctx.quadraticCurveTo(el.x - 12, el.y - cSize * 0.65, el.x - 12, el.y - cSize * 0.9);
         ctx.lineWidth = 4;
-        ctx.strokeStyle = 'rgba(120, 53, 15, 0.65)';
+        ctx.strokeStyle = level === 3 ? 'rgba(88, 28, 135, 0.75)' : (level === 4 ? 'rgba(15, 23, 42, 0.8)' : 'rgba(120, 53, 15, 0.65)');
         ctx.stroke();
         
-        // right curved arm
         ctx.beginPath();
         ctx.moveTo(el.x + 3, el.y - cSize * 0.45);
         ctx.quadraticCurveTo(el.x + 12, el.y - cSize * 0.45, el.x + 12, el.y - cSize * 0.75);
@@ -373,11 +517,52 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // Draw main ground desert sand floor glow overlay (seamlessly blends)
     const grGrad = ctx.createLinearGradient(0, height * 0.55, 0, height);
-    grGrad.addColorStop(0, 'rgba(249, 115, 22, 0.15)');  // pleasant warm orange dust glow
-    grGrad.addColorStop(0.6, 'rgba(124, 45, 18, 0.1)');  // sunset terracotta shades
-    grGrad.addColorStop(1, 'rgba(43, 14, 6, 0.35)');      // cozy ground base
+    if (level === 1) {
+      grGrad.addColorStop(0, 'rgba(253, 224, 71, 0.18)');
+      grGrad.addColorStop(0.6, 'rgba(244, 180, 26, 0.15)');
+      grGrad.addColorStop(1, 'rgba(124, 45, 18, 0.3)');
+    } else if (level === 2) {
+      grGrad.addColorStop(0, 'rgba(239, 68, 68, 0.16)');
+      grGrad.addColorStop(0.6, 'rgba(127, 29, 29, 0.15)');
+      grGrad.addColorStop(1, 'rgba(67, 12, 12, 0.35)');
+    } else if (level === 3) {
+      grGrad.addColorStop(0, 'rgba(192, 132, 252, 0.22)');
+      grGrad.addColorStop(0.6, 'rgba(59, 7, 100, 0.18)');
+      grGrad.addColorStop(1, 'rgba(24, 3, 44, 0.45)');
+    } else if (level === 4) {
+      grGrad.addColorStop(0, 'rgba(6, 182, 212, 0.11)');
+      grGrad.addColorStop(0.6, 'rgba(15, 23, 42, 0.2)');
+      grGrad.addColorStop(1, 'rgba(3, 7, 18, 0.5)');
+    } else {
+      grGrad.addColorStop(0, 'rgba(244, 114, 182, 0.2)');
+      grGrad.addColorStop(0.6, 'rgba(49, 16, 66, 0.15)');
+      grGrad.addColorStop(1, 'rgba(15, 5, 29, 0.4)');
+    }
+
     ctx.fillStyle = grGrad;
     ctx.fillRect(0, height * 0.55, width, height - height * 0.55);
+  };
+
+  const getLevelBorderColor = (lvl: number) => {
+    switch (lvl) {
+      case 1: return '#f59e0b'; // amber
+      case 2: return '#ef4444'; // crimson red
+      case 3: return '#c084fc'; // neon purple
+      case 4: return '#06b6d4'; // bright cyan
+      case 5: return '#f472b6'; // cosmic pink
+      default: return '#f59e0b';
+    }
+  };
+
+  const getLevelRailColor = (lvl: number) => {
+    switch (lvl) {
+      case 1: return '#ea580c'; // bronze-orange
+      case 2: return '#dc2626'; // dark blood-red
+      case 3: return '#9333ea'; // violet magenta
+      case 4: return '#0891b2'; // ocean cyan
+      case 5: return '#db2777'; // sparkling pink
+      default: return '#ea580c';
+    }
   };
 
   const drawLanes = (ctx: CanvasRenderingContext2D) => {
@@ -404,7 +589,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.fill();
     
     // Smooth fine perspective borders/metal safety barriers
-    ctx.strokeStyle = '#f59e0b'; // glowing amber yellow borders
+    ctx.strokeStyle = getLevelBorderColor(state.level); // dynamic level safety borders
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     // left border
@@ -429,7 +614,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       
       // Sleeper expands in thickness as it moves closer to screen bottom
       ctx.lineWidth = Math.max(1.5, 9 * depth);
-      ctx.strokeStyle = 'rgba(120, 53, 15, 0.42)'; // elegant rust/brown wood
+      ctx.strokeStyle = state.level === 3 ? 'rgba(88, 28, 135, 0.42)' : (state.level === 4 ? 'rgba(30, 41, 59, 0.5)' : 'rgba(120, 53, 15, 0.42)');
       
       for (let l = 0; l < LANE_COUNT; l++) {
         const laneCenterX = getLaneX(l);
@@ -464,7 +649,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       
       // Steel Rail base (dark outline)
       ctx.lineWidth = 5;
-      ctx.strokeStyle = '#451a03'; // deep metallic copper/brown shadow
+      ctx.strokeStyle = '#1e1b4b'; // deep space-indigo shadow
       ctx.beginPath();
       ctx.moveTo(rLStart, yStart);
       ctx.lineTo(rLEnd, yEnd);
@@ -474,7 +659,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       // Steel Rail active metallic core
       ctx.lineWidth = 2.5;
-      ctx.strokeStyle = '#ea580c'; // glowing bright bronze-orange steel look
+      ctx.strokeStyle = getLevelRailColor(state.level); // dynamic level metallic rail core
       ctx.beginPath();
       ctx.moveTo(rLStart, yStart);
       ctx.lineTo(rLEnd, yEnd);
@@ -484,7 +669,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
       // Top shiny highlight on rails
       ctx.lineWidth = 0.8;
-      ctx.strokeStyle = '#ffedd5'; // bright gold highlight
+      ctx.strokeStyle = '#ffffff'; // bright brilliant white/gold highlight
       ctx.beginPath();
       ctx.moveTo(rLStart, yStart);
       ctx.lineTo(rLEnd, yEnd);
@@ -494,7 +679,8 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       
       // Glowing neon light beam in center of each lane (Subway track guides)
       ctx.lineWidth = 1.25;
-      ctx.strokeStyle = 'rgba(249, 115, 22, 0.15)'; 
+      const neonColor = state.level === 4 || state.level === 5 ? '34, 211, 238' : '249, 115, 22';
+      ctx.strokeStyle = `rgba(${neonColor}, 0.22)`; 
       ctx.beginPath();
       ctx.moveTo(vanishingX + (laneCenterX - vanishingX) * startDepth, yStart);
       ctx.lineTo(vanishingX + (laneCenterX - vanishingX) * endDepth, yEnd);
@@ -634,23 +820,24 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.fill();
     ctx.restore();
 
-    // 4. THE BACK OF HEAD (Solid golden yellow representing crown/hair of head, no face!)
+    // 4. THE LION FACE (Turning back to face the camera look)
+    // Primary golden skin
     ctx.fillStyle = '#f1c40f'; // Bright golden yellow head skin
     ctx.beginPath();
     ctx.arc(headCenterX, headCenterY, 17, 0, Math.PI * 2);
     ctx.fill();
 
-    // Ears seen from behind (golden yellow back-facing triangles, no pink inner)
-    // Left ear back
-    ctx.fillStyle = '#813200'; // dark foundation shadow
+    // Ears seen from behind or front (back-tilted cute appearance)
+    // Left ear
+    ctx.fillStyle = '#813200'; // outer shadow
     ctx.beginPath();
     ctx.moveTo(headCenterX - 13, headCenterY - 11);
     ctx.lineTo(headCenterX - 18, headCenterY - 26);
     ctx.lineTo(headCenterX - 4, headCenterY - 15);
     ctx.closePath();
     ctx.fill();
-    
-    ctx.fillStyle = '#f1c40f'; // golden yellow outer fur
+
+    ctx.fillStyle = '#f1c40f'; // yellow ear skin
     ctx.beginPath();
     ctx.moveTo(headCenterX - 11, headCenterY - 13);
     ctx.lineTo(headCenterX - 15, headCenterY - 23);
@@ -658,8 +845,13 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.closePath();
     ctx.fill();
 
-    // Right ear back
-    ctx.fillStyle = '#813200'; // dark foundation shadow
+    ctx.fillStyle = '#ff9999'; // ear pink center
+    ctx.beginPath();
+    ctx.arc(headCenterX - 10, headCenterY - 16, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Right ear
+    ctx.fillStyle = '#813200'; // outer shadow
     ctx.beginPath();
     ctx.moveTo(headCenterX + 13, headCenterY - 11);
     ctx.lineTo(headCenterX + 18, headCenterY - 26);
@@ -667,12 +859,70 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = '#f1c40f'; // golden yellow outer fur
+    ctx.fillStyle = '#f1c40f'; // yellow ear skin
     ctx.beginPath();
     ctx.moveTo(headCenterX + 11, headCenterY - 13);
     ctx.lineTo(headCenterX + 15, headCenterY - 23);
     ctx.lineTo(headCenterX + 5, headCenterY - 15);
     ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#ff9999'; // ear pink center
+    ctx.beginPath();
+    ctx.arc(headCenterX + 10, headCenterY - 16, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // SPARKLY CARTOON EYES looking backward with focus!
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(headCenterX - 6, headCenterY - 3, 4, 0, Math.PI * 2);
+    ctx.arc(headCenterX + 6, headCenterY - 3, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(headCenterX - 6.2, headCenterY - 2.8, 2, 0, Math.PI * 2);
+    ctx.arc(headCenterX + 5.8, headCenterY - 2.8, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Tiny white sparkle highlight
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(headCenterX - 7, headCenterY - 3.8, 1, 0, Math.PI * 2);
+    ctx.arc(headCenterX + 5, headCenterY - 3.8, 1, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Snout / Muzzle cheeks
+    ctx.fillStyle = '#f39c12';
+    ctx.beginPath();
+    ctx.arc(headCenterX - 3, headCenterY + 4, 4.5, 0, Math.PI * 2);
+    ctx.arc(headCenterX + 3, headCenterY + 4, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cute dark brown triangular nose
+    ctx.fillStyle = '#3e2723';
+    ctx.beginPath();
+    ctx.moveTo(headCenterX - 3, headCenterY + 1.5);
+    ctx.lineTo(headCenterX + 3, headCenterY + 1.5);
+    ctx.lineTo(headCenterX, headCenterY + 4.5);
+    ctx.closePath();
+    ctx.fill();
+
+    // Black cartoon smile
+    ctx.strokeStyle = '#3e2723';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(headCenterX - 2, headCenterY + 4.5, 2.2, 0, Math.PI);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(headCenterX + 2, headCenterY + 4.5, 2.2, 0, Math.PI);
+    ctx.stroke();
+
+    // Cute pink cheeks blush!
+    ctx.fillStyle = 'rgba(239, 68, 68, 0.45)';
+    ctx.beginPath();
+    ctx.arc(headCenterX - 11, headCenterY + 2, 2.5, 0, Math.PI * 2);
+    ctx.arc(headCenterX + 11, headCenterY + 2, 2.5, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
@@ -1230,12 +1480,65 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       spawnPeriodBase: 95,
     };
 
-    // Smoothly accelerate over time until reaching the max limit cap
-    if (state.speed < dSettings.maxSpeed) {
-      state.speed += dSettings.acceleration;
+    // 1. DISTANCE ACCUMULATION & LEVEL CHECKPOINT EVALUATIONS
+    state.distanceValue += state.speed * 0.012;
+
+    // Evaluate active zone boundaries
+    let nextLevel = 1;
+    if (state.distanceValue >= 2500) {
+      if (!state.victory) {
+        state.victory = true;
+        setIsVictorious(true); // Pop-up victory React modal
+        audioSynth.playCollectShield(); // Play beautiful victory melody
+        state.obstacles = [];
+        state.collectibles = [];
+      }
+      return; // Stop math execution
+    } else if (state.distanceValue >= 1900) {
+      nextLevel = 5;
+    } else if (state.distanceValue >= 1400) {
+      nextLevel = 4;
+    } else if (state.distanceValue >= 900) {
+      nextLevel = 3;
+    } else if (state.distanceValue >= 400) {
+      nextLevel = 2;
     }
 
+    // Trigger level advancement events (displays grand visual banners on the screen)
+    if (nextLevel !== state.level) {
+      state.level = nextLevel;
+      state.levelUpMessageTimer = 110; // visual banner stays active for ~1.8 seconds
 
+      let levelTitleStr = '';
+      if (nextLevel === 2) levelTitleStr = 'BÖLÜM 2: KIZIL TEHLİKE!';
+      else if (nextLevel === 3) levelTitleStr = 'BÖLÜM 3: SİBER GÜNBATIMI!';
+      else if (nextLevel === 4) levelTitleStr = 'BÖLÜM 4: DİJİTAL FIRTINA!';
+      else if (nextLevel === 5) levelTitleStr = 'BÖLÜM 5: KOZMİK VAHA FİNALİ!';
+
+      state.levelUpBannerText = levelTitleStr;
+      audioSynth.playCollectShield(); // play pleasant notification tone
+    }
+
+    if (state.levelUpMessageTimer > 0) {
+      state.levelUpMessageTimer--;
+    }
+
+    // Determine target speed limit based on active level
+    let targetSpeedLimit = dSettings.initialSpeed; // Normal speed for Level 1 & 2
+    if (state.level === 3) {
+      targetSpeedLimit = dSettings.initialSpeed + 1.8; // increased speed
+    } else if (state.level === 4) {
+      targetSpeedLimit = dSettings.initialSpeed + 3.5; // frantic speed
+    } else if (state.level === 5) {
+      targetSpeedLimit = dSettings.initialSpeed + 5.5; // extreme cosmic speed warp!
+    }
+
+    // Smoothly transition speed rate towards the active level's target speed limit
+    if (state.speed < targetSpeedLimit) {
+      state.speed += 0.04;
+    } else if (state.speed > targetSpeedLimit) {
+      state.speed -= 0.04;
+    }
 
     // Gradually increment survival score
     state.score += 0.08 * (state.speed / dSettings.initialSpeed);
@@ -1305,17 +1608,39 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
       if (decider < 0.62) {
         // Build cacti obstacle
         let cactusType: ObstacleType = 'normal';
-        const laserChance = Math.random();
         
-        // Prevent consecutive vertical lasers
-        const lastObs = state.obstacles.length > 0 ? state.obstacles[state.obstacles.length - 1] : null;
-        const wasLastObsLaser = lastObs ? lastObs.type === 'vLaser' : false;
-        const frameDiff = state.frameCount - state.lastLaserFrame;
-        const tooSoon = frameDiff < (spawnPeriod * 3.5); // increased buffer between lasers
-        
-        if (laserChance < 0.10 && !wasLastObsLaser && !tooSoon) {
-          cactusType = 'vLaser'; // vertical laser on lane
-          state.lastLaserFrame = state.frameCount;
+        // Spawn lasers only if level >= 2
+        if (state.level >= 2) {
+          const laserChance = Math.random();
+          const lastObs = state.obstacles.length > 0 ? state.obstacles[state.obstacles.length - 1] : null;
+          const wasLastObsLaser = lastObs ? (lastObs.type === 'vLaser' || lastObs.type === 'hLaser') : false;
+          const frameDiff = state.frameCount - state.lastLaserFrame;
+          const tooSoon = frameDiff < (spawnPeriod * 3.0); // buffer between lasers
+          
+          if (!wasLastObsLaser && !tooSoon) {
+            // Determine laser type thresholds based on level difficulty
+            let vLaserThreshold = 0.10; // Level 2: 10% vertical laser chance
+            let hLaserThreshold = 0.0;  // Level 2: 0% horizontal laser chance (no high lasers in Lv 2!)
+            
+            if (state.level === 3) {
+              vLaserThreshold = 0.14;
+              hLaserThreshold = 0.06;
+            } else if (state.level === 4) {
+              vLaserThreshold = 0.18;
+              hLaserThreshold = 0.10;
+            } else if (state.level === 5) {
+              vLaserThreshold = 0.22;
+              hLaserThreshold = 0.13;
+            }
+
+            if (laserChance < vLaserThreshold) {
+              cactusType = 'vLaser';
+              state.lastLaserFrame = state.frameCount;
+            } else if (laserChance < vLaserThreshold + hLaserThreshold) {
+              cactusType = 'hLaser';
+              state.lastLaserFrame = state.frameCount;
+            }
+          }
         }
 
         state.obstacles.push({
@@ -1513,6 +1838,17 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     spawnExplosion(playerObj.x, playerObj.y - 20, '#813200', 16);
   };
 
+  const getLevelColor = (level: number) => {
+    switch (level) {
+      case 1: return '#3b82f6'; // Sakin Sky Blue
+      case 2: return '#dc2626'; // Hot Crimson Red
+      case 3: return '#a855f7'; // Synthwave Neon Purple
+      case 4: return '#06b6d4'; // Electric Lightning Cyan
+      case 5: return '#f472b6'; // Cosmic Supernova Pink
+      default: return '#fb923c';
+    }
+  };
+
   const drawHUD = (ctx: CanvasRenderingContext2D) => {
     const { width, height } = dimensions;
     const state = stateRef.current;
@@ -1524,7 +1860,7 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     
     // 1. TOP HUD CONTAINER BAR (Semi-translucent dark glassmorphism combo)
     ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-    ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
+    ctx.strokeStyle = getLevelBorderColor(state.level); // glows in active level color!
     ctx.lineWidth = 2;
     
     const hudY = 12;
@@ -1544,36 +1880,37 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.textBaseline = 'middle';
     ctx.fillText(`🍔 ${state.itemsCollected}`, hudX + 14, hudY + hudHeight / 2);
 
-    // 3. CORE SPEED RATE BAR (Center section)
-    const currentSpeed = state.speed;
-    const initialSpeed = state.difficultySettings?.initialSpeed || INITIAL_SPEED;
-    const maxSpeed = state.difficultySettings?.maxSpeed || MAX_SPEED;
-    const speedProgress = Math.min(1.0, (currentSpeed - initialSpeed) / (maxSpeed - initialSpeed || 1));
+    // 3. LEVEL & DISTANCE BAR (Center section)
+    let levelStart = 0;
+    let levelTarget = 400;
+    if (state.level === 2) { levelStart = 400; levelTarget = 900; }
+    else if (state.level === 3) { levelStart = 900; levelTarget = 1400; }
+    else if (state.level === 4) { levelStart = 1400; levelTarget = 1900; }
+    else if (state.level === 5) { levelStart = 1900; levelTarget = 2500; }
+
+    const levelProg = Math.min(1.0, Math.max(0, (state.distanceValue - levelStart) / (levelTarget - levelStart)));
     
     const barX = hudX + 70;
     const barWidth = width * 0.28;
     const barY = hudY + hudHeight / 2 - 4;
     
-    // Draw speed track
+    // Draw level progress track
     ctx.fillStyle = 'rgba(71, 85, 105, 0.4)';
     ctx.beginPath();
     ctx.roundRect(barX, barY + 4, barWidth, 6, 3);
     ctx.fill();
     
-    // Draw active speed progress
-    const activeBarWidth = barWidth * speedProgress;
-    const speedGrad = ctx.createLinearGradient(barX, 0, barX + barWidth, 0);
-    speedGrad.addColorStop(0, '#f59e0b'); // amber-500
-    speedGrad.addColorStop(1, '#ef4444'); // rose-500
-    ctx.fillStyle = speedGrad;
+    // Draw active level progress using level-specific color
+    const activeBarWidth = barWidth * levelProg;
+    ctx.fillStyle = getLevelColor(state.level);
     ctx.beginPath();
     ctx.roundRect(barX, barY + 4, activeBarWidth, 6, 3);
     ctx.fill();
     
-    // Speed rate text label
-    ctx.fillStyle = '#94a3b8';
+    // Level & Distance label
+    ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 9px "JetBrains Mono", var(--font-mono), monospace';
-    ctx.fillText(`${currentSpeed.toFixed(1)}x HIZ`, barX, barY - 1);
+    ctx.fillText(`BÖLÜM ${state.level} • ${Math.floor(state.distanceValue)}m`, barX, barY - 1);
 
     // 4. INSTANT LIVE SCORE (Right section, glowing orange-gold)
     ctx.textAlign = 'right';
@@ -1628,6 +1965,41 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
 
     // Render beautiful HUD overlay
     drawHUD(ctx);
+
+    // 5. RENDER GIANT LEVEL UP BANNER (Floating overlay in Turkish, glowing and animated!)
+    if (state.levelUpMessageTimer > 0) {
+      ctx.save();
+      const alpha = Math.min(1.0, state.levelUpMessageTimer / 15);
+      
+      // Black translucent ribbon background across the center
+      ctx.fillStyle = `rgba(15, 23, 42, ${0.80 * alpha})`;
+      ctx.fillRect(0, dimensions.height * 0.42 - 30, dimensions.width, 60);
+      
+      // Top and bottom glowing accent lines
+      ctx.fillStyle = getLevelColor(state.level);
+      ctx.globalAlpha = alpha;
+      ctx.fillRect(0, dimensions.height * 0.42 - 32, dimensions.width, 2);
+      ctx.fillRect(0, dimensions.height * 0.42 + 30, dimensions.width, 2);
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Primary text shadow
+      ctx.font = '800 17px "Space Grotesk", var(--font-sans), sans-serif';
+      ctx.fillStyle = '#000000';
+      ctx.fillText(state.levelUpBannerText, dimensions.width / 2 + 1.2, dimensions.height * 0.42 - 4 + 1.2);
+
+      // Primary glowing text
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(state.levelUpBannerText, dimensions.width / 2, dimensions.height * 0.42 - 4);
+
+      // Helper sub-message
+      ctx.font = 'bold 9px "JetBrains Mono", var(--font-sans), sans-serif';
+      ctx.fillStyle = getLevelColor(state.level);
+      ctx.fillText("HIZ VE ENGELLER GÜNCELLENDİ!", dimensions.width / 2, dimensions.height * 0.42 + 15);
+      
+      ctx.restore();
+    }
   };
 
   // --- MOBİL DOKUNMATİK KAYDIRMA (TOUCH SWIPE INTERCEPTORS) ---
@@ -1726,6 +2098,41 @@ export const GameCanvas: React.FC<GameCanvasProps> = ({
         }}
       />
 
+      {/* --- REKOR / ZAFER KAZANMA ÖZEL OVERLAY --- */}
+      {isVictorious && (
+        <div id="victoryOverlay" className="absolute inset-x-4 max-w-sm mx-auto bg-slate-900/95 backdrop-blur-md p-5 border-4 border-amber-400 rounded-2xl z-40 text-center shadow-2xl animate-fade-in animate-duration-300">
+          <div className="relative text-5xl mb-2 animate-bounce">🦁🏆✨</div>
+          <h2 className="text-2xl font-extrabold text-amber-500 tracking-tight mb-1 uppercase drop-shadow">ŞAMPİYON ASLAN!</h2>
+          <div className="w-12 h-1 bg-amber-400 mx-auto rounded mb-3" />
+          
+          <p className="text-slate-200 text-xs px-2.5 mb-4 leading-relaxed bg-slate-950/75 py-2.5 rounded-lg border border-slate-800">
+            Tebrikler! Müthiş reflekslerin sayesinde aslanımızı siber çölün engellerinden tam <strong className="text-amber-300">2500m</strong> kaçırarak nihai yeşil <strong className="text-emerald-400">Vahaya</strong> ulaştırdın! Kazandın! 🎉
+          </p>
+
+          <div className="bg-slate-950/90 rounded-xl px-4 py-3 mb-4 border border-slate-800 flex flex-col gap-1.5">
+            <div className="flex justify-between items-center text-[11px] text-slate-400 font-mono">
+              <span>Toplam Hamburger:</span>
+              <span className="text-amber-400 font-bold">🍔 {stateRef.current.itemsCollected} Adet</span>
+            </div>
+            <div className="flex justify-between items-center text-[11px] text-slate-400 font-mono">
+              <span>Kazanılan Skor:</span>
+              <span className="text-emerald-400 font-extrabold">{Math.floor(stateRef.current.score)} Puan</span>
+            </div>
+          </div>
+
+          <button
+            id="btnVictoryReset"
+            type="button"
+            onClick={() => {
+              resetGameData();
+              setOnRestartRequest(true);
+            }}
+            className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-xs tracking-wider uppercase rounded-xl shadow-md active:scale-95 transition-all cursor-pointer border-b-4 border-amber-700 hover:border-amber-600"
+          >
+            Yeniden Başlat
+          </button>
+        </div>
+      )}
 
     </div>
   );

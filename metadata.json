@@ -1,6 +1,6 @@
 {
   "name": "Aslan Kaçış",
-  "description": "Şerit değiştirip zıplayarak kaktüs ve lazerlerden kaçtığınız, kum kristalleri ve vaha kalkanı topladığınız eğlenceli ve heyecanlı bir sonsuz koşu oyunu.",
+  "description": "5 heyecan verici bölümlü (Sakin Çöl, Kızıl Tehlike, Siber Günbatımı, Dijital Fırtına ve Kozmik Vaha) şerit değiştirmeli ve zıplamalı, aslan yüzü animasyonlu premium 3D sonsuz/bölümlü koşu oyunu.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
